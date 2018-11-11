@@ -32,6 +32,7 @@ def talker():
     pub = rospy.Publisher('IMU_acceleration', String, queue_size=10)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(10) # 10hz
+
     bus = smbus.SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
     address = 0x68  # via i2cdetect
 
@@ -48,33 +49,11 @@ def talker():
     beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
     get_x_rotation(beschleunigung_xout_skaliert, beschleunigung_yout_skaliert, beschleunigung_zout_skaliert)
     get_y_rotation(beschleunigung_xout_skaliert, beschleunigung_yout_skaliert, beschleunigung_zout_skaliert)
-    imu
+
     while not rospy.is_shutdown():
         hello_str = "hello world %s" % rospy.get_time609264()
         rospy.loginfo(hello_str)
         pub.publish(hello_str)
-import time
-import rospy
-from geometry_msgs.msg import Pose2D
-def talker():
-    pub = rospy.Publisher('car_motor_input', Pose2D, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
-    input_motor_speed=0
-    while not rospy.is_shutdown():
-        num = raw_input('Geschwindigkeit:')
-        try:
-            input_motor_speed=float(num)
-        except ValueError:
-            print('should have used a number')
-            continue
-
-        message = Pose2D()
-        message.x=input_motor_speed#aktuell in tick rate(+- 3900)
-        message.y=2#not used
-        message.theta=0#in grad(max +-20)
-        rospy.loginfo(message)
-        pub.publish(message)
         rate.sleep()
 
 if __name__ == '__main__':
@@ -82,33 +61,3 @@ if __name__ == '__main__':
         talker()
     except rospy.ROSInterruptException:
         pass
-
-
-gyroskop_xout = read_word_2c(0x43)
-gyroskop_yout = read_word_2c(0x45)
-gyroskop_zout = read_word_2c(0x47)
-
-beschleunigung_xout = read_word_2c(0x3b)
-beschleunigung_yout = read_word_2c(0x3d)
-beschleunigung_zout = read_word_2c(0x3f)
-
-beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
-beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
-beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
-
-print
-"beschleunigung_xout: ", ("%6d" % beschleunigung_xout), " skaliert: ", beschleunigung_xout_skaliert
-print
-"beschleunigung_yout: ", ("%6d" % beschleunigung_yout), " skaliert: ", beschleunigung_yout_skaliert
-print
-"beschleunigung_zout: ", ("%6d" % beschleunigung_zout), " skaliert: ", beschleunigung_zout_skaliert
-
-print
-"X Rotation: ",
-print
-<<<<<<< HEAD
-"Y Rotation: ",
-=======
-"Y Rotation: ", get_y_rotation(beschleunigung_xout_skaliert, beschleunigung_yout_skaliert, beschleunigung_zout_skaliert)
-
->>>>>>> aa4c25919d4233a88d4285e2d59e9f92043c57ab
