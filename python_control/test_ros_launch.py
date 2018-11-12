@@ -2,11 +2,11 @@
 # license removed for brevity
 import time
 import rospy
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import PointStamped
 def talker():
-    pub = rospy.Publisher('car_motor_input', Pose2D, queue_size=10)
+    pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(30) # 10hz
     input_motor_speed=0
     while not rospy.is_shutdown():
         num = raw_input('Geschwindigkeit:')
@@ -16,10 +16,13 @@ def talker():
             print('should have used a number')
             continue
 
-        message = Pose2D()
-        message.x=input_motor_speed#aktuell in tick rate(+- 3900)
-        message.y=2#not used
-        message.theta=0#in grad(max +-20)
+        message = PointStamped()
+        message.header.stamp = rospy.Time.now()
+        #message.header.frame_id =1
+        #message.header.seq =2
+        message.point.x=input_motor_speed#aktuell in tick rate(+- 3900)
+        message.point.y=2#not used
+        message.point.z=0#in grad(max +-20)
         rospy.loginfo(message)
         pub.publish(message)
         rate.sleep()
