@@ -67,7 +67,7 @@ def talker():
             # In the current setup, I have the state simply printing out to the screen.
 
             os.system('clear')
-        num=axis_data[1]*-2000
+        num=axis_data[1]*-4000
         angle=axis_data[0]*25
 
         input_motor_speed=float(num)
