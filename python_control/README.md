@@ -43,7 +43,7 @@ Aktuell nur auf dem PI. Kann gelesen werden um Beschleunigung und Drehung festzu
 Hier nutzen wir ein Package von ROS direkt welches die gesammte kommunikation regelt. Hierzu gibt es hier Infos.
 https://github.com/UbiquityRobotics/raspicam_node
 Wir haben Camera v2 am Auto.
-#PS4 Controller
+# PS4 Controller
 Das python Script Controller_Steuerung_PS4.py ermoeglicht die Steuerung des Autos mit dem PS4 Controller. Dadurch kann sehr schnell kurz etwas getestet werden.
 
 
