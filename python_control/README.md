@@ -32,7 +32,7 @@ Tutorial fuer die Netzwerksteuerung: http://wiki.ros.org/ROS/NetworkSetup
 Als naechstes bevor die Scripte gestartet werden koennen muss roscore auf dem PI gestartet werden. Alle Daten die PI am ende ihrer Datei haben muessen auf dem PI gestartet werden. 
 
  
-#Motor Steuerung
+ # Motor Steuerung
 wird durch ROS_Listener_Motor_PI.py gestartet. Sendet alle empfangenen daten an die Motorsteuerung.
 Das Script Motor_Steuerung_v.py kann die Geschwindigkeit einstellen als beispiel. Rest steht in der Datei selber. 
 #Imu
