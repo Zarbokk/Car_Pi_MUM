@@ -25,6 +25,7 @@ import pygame
 import time
 import rospy
 from geometry_msgs.msg import PointStamped
+
 def talker():
     controller = None
     axis_data = None
@@ -68,7 +69,7 @@ def talker():
 
             os.system('clear')
         num=axis_data[1]*-4000
-        angle=axis_data[0]*25
+        angle=axis_data[0]*35
 
         input_motor_speed=float(num)
         message = PointStamped()

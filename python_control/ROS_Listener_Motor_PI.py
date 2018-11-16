@@ -1,4 +1,3 @@
-
 # !/usr/bin/env python
 
 import rospy
@@ -6,13 +5,12 @@ from geometry_msgs.msg import PointStamped
 import Adafruit_PCA9685
 
 def callback(data, pwm):
-    #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.x)
     if data.point.z<30 and data.point.z>-30:
-        pwm.set_pwm(1,0,2457+819*int(data.point.z)/30)
-    if data.point.x>-3900 and data.point.x<=0:
+        pwm.set_pwm(1,0,2457+819*int(data.point.z)/30)#2457 da auf 400 Hz 30 fuer 30 Grad(in der theorie)
+    if data.point.x>=-4095 and data.point.x<=0:
         pwm.set_pwm(11,0,0)
         pwm.set_pwm(10, 0, int(data.point.x)*-1)
-    if data.point.x<3900 and data.point.x>=0:
+    if data.point.x<=4095 and data.point.x>=0:
         pwm.set_pwm(11,0,int(data.point.x))
         pwm.set_pwm(10, 0, 0)
 
@@ -25,9 +23,9 @@ def listener():
     # run simultaneously.
 
     pwm = Adafruit_PCA9685.PCA9685(address=0x40)
-    pwm.set_pwm_freq(400)
-    pwm.set_pwm(8,0,3500)
-    pwm.set_pwm(9,0,3500)
+    pwm.set_pwm_freq(400)#frequenz von 400 Hz
+    pwm.set_pwm(8,0,4000)
+    pwm.set_pwm(9,0,4000)
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber("car_motor_input", PointStamped, callback, pwm)
     # spin() simply keeps python from exiting until this node is stopped
