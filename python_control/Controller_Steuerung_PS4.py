@@ -23,30 +23,67 @@ import pygame
 #!/usr/bin/env python
 # license removed for brevity
 import time
-import rospy
-from geometry_msgs.msg import PointStamped
+#import rospy
+#from geometry_msgs.msg import PointStamped
 
 def talker():
-    controller = None
-    axis_data = None
-    button_data = None
-    hat_data = None
-    pygame.init()
-    pygame.joystick.init()
-    controller = pygame.joystick.Joystick(0)
-    controller.init()
-    if not axis_data:
-        axis_data = {}
+    num=0
+    while 1:
+        try:
+            controller = None
+            axis_data = None
+            button_data = None
+            hat_data = None
+            pygame.init()
+            pygame.joystick.init()
+            controller = pygame.joystick.Joystick(0)
+            controller.init()
+            if not axis_data:
+                axis_data = {}
 
-    if not button_data:
-        button_data = {}
-        for i in range(controller.get_numbuttons()):
-            button_data[i] = False
+            if not button_data:
+                button_data = {}
+                for i in range(controller.get_numbuttons()):
+                    button_data[i] = False
 
-    if not hat_data:
-        hat_data = {}
-        for i in range(controller.get_numhats()):
-            hat_data[i] = (0, 0)
+            if not hat_data:
+                hat_data = {}
+                for i in range(controller.get_numhats()):
+                    hat_data[i] = (0, 0)
+            break
+        except ValueError:
+            print("move your Controller")
+    print("huhu")
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.JOYAXISMOTION:
+                axis_data[event.axis] = round(event.value, 2)
+            elif event.type == pygame.JOYBUTTONDOWN:
+                button_data[event.button] = True
+            elif event.type == pygame.JOYBUTTONUP:
+                button_data[event.button] = False
+            elif event.type == pygame.JOYHATMOTION:
+                hat_data[event.hat] = event.value
+
+            # Insert your code on what you would like to happen for each event here!
+            # In the current setup, I have the state simply printing out to the screen.
+
+            os.system('clear')
+            #button 0 viereck fuer bremsen
+        if button_data[7]:
+            num=num+10
+        else:
+            if num > 0:
+                num=num-10
+
+        if button_data[0]:
+            num=num-10
+        else:
+            if num < 0:
+                num = num +10
+        #angle=axis_data[0]*30
+        #print(angle)
+        print(num)
 
 
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
@@ -84,7 +121,7 @@ def talker():
         rate.sleep()
 
 if __name__ == '__main__':
-    try:
-        talker()
-    except rospy.ROSInterruptException:
-        pass
+    #try:
+    talker()
+    #except rospy.ROSInterruptException:
+    #    pass
