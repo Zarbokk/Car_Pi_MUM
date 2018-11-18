@@ -23,8 +23,8 @@ import pygame
 #!/usr/bin/env python
 # license removed for brevity
 import time
-#import rospy
-#from geometry_msgs.msg import PointStamped
+import rospy
+from geometry_msgs.msg import PointStamped
 
 def talker():
     num=0
@@ -53,38 +53,6 @@ def talker():
             break
         except ValueError:
             print("move your Controller")
-    print("huhu")
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.JOYAXISMOTION:
-                axis_data[event.axis] = round(event.value, 2)
-            elif event.type == pygame.JOYBUTTONDOWN:
-                button_data[event.button] = True
-            elif event.type == pygame.JOYBUTTONUP:
-                button_data[event.button] = False
-            elif event.type == pygame.JOYHATMOTION:
-                hat_data[event.hat] = event.value
-
-            # Insert your code on what you would like to happen for each event here!
-            # In the current setup, I have the state simply printing out to the screen.
-
-            os.system('clear')
-            #button 0 viereck fuer bremsen
-        if button_data[7]:
-            num=num+10
-        else:
-            if num > 0:
-                num=num-10
-
-        if button_data[0]:
-            num=num-10
-        else:
-            if num < 0:
-                num = num +10
-        #angle=axis_data[0]*30
-        #print(angle)
-        print(num)
-
 
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
@@ -101,18 +69,31 @@ def talker():
             elif event.type == pygame.JOYHATMOTION:
                 hat_data[event.hat] = event.value
 
-            # Insert your code on what you would like to happen for each event here!
-            # In the current setup, I have the state simply printing out to the screen.
 
-            os.system('clear')
-        num=axis_data[1]*-4000
-        angle=axis_data[0]*35
+            if button_data[7]:
+                num = num + 133
+            else:
+                if num > 0:
+                    num = num - 133
+
+            if button_data[0]:
+                num = num - 133
+            else:
+                if num < 0:
+                    num = num + 133
+            if num > 4094:
+                num = 4094
+            if num < -4094:
+                num = -4094
+            angle = axis_data[0] * 30
+        #num=axis_data[1]*-4000
+        #angle=axis_data[0]*35
 
         input_motor_speed=float(num)
         message = PointStamped()
         message.header.stamp = rospy.Time.now()
-        #message.header.frame_id =1
-        #message.header.seq =2
+        #message.header.frame_id = 1
+        #message.header.seq = 2
         message.point.x=input_motor_speed#aktuell in tick rate(+- 3900)
         message.point.y=2#not used
         message.point.z=float(angle)#in grad(max +-20)
