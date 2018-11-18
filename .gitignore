@@ -5,7 +5,7 @@ MATLAB/Steuerung/*.tlc
 MATLAB/Steuerung/*.mexmaci64
 MATLAB/Steuerung/*.mat
 python_control/.idea/*
-
+tmux/
 
 
 

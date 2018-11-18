@@ -3,6 +3,7 @@
 import time
 import rospy
 from geometry_msgs.msg import PointStamped
+
 def talker():
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)

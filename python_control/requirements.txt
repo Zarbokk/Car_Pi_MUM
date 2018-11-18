@@ -1,0 +1,14 @@
+# in work, please cleanup and/or add things needed!
+adafruit-pca9685
+# Python code to use the PCA9685 PWM servo/LED controller with a Raspberry Pi or BeagleBone black.
+opencv
+# cv2,
+
+# ros packages:
+cv_bridge
+# #
+geometry_msgs
+# #
+message_filters
+rospy
+sensor_msgs

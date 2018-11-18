@@ -1,22 +1,23 @@
 
 # !/usr/bin/env python
 
-import rospy
-import message_filters
-from sensor_msgs.msg import Image, CompressedImage
-from geometry_msgs.msg import PointStamped
-import cv2
 from cv_bridge import CvBridge, CvBridgeError
+from geometry_msgs.msg import PointStamped
+from sensor_msgs.msg import Image, CompressedImage
+import cv2
+import message_filters
+import rospy
+
 def callback(image , motor_data):
-    brige=CvBridge()
+    brige = CvBridge()
     try:
         cv_image = brige.compressed_imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
 
-    #(rows, cols, channels) = cv_image.shape
-    #if cols > 60 and rows > 60:
-    #    cv2.circle(cv_image, (50, 50), 10, 255)
+    # (rows, cols, channels) = cv_image.shape
+    # if cols > 60 and rows > 60:
+    #     cv2.circle(cv_image, (50, 50), 10, 255)
     gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
     cv2.imshow("Image Window", gray_image)
     cv2.waitKey(3)
