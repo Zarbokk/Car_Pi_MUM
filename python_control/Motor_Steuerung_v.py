@@ -7,7 +7,7 @@ from geometry_msgs.msg import PointStamped
 def talker():
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(30) # 10hz
+    rate = rospy.Rate(30) # Frequenz der Anwendung
     input_motor_speed=0
     while not rospy.is_shutdown():
         num = raw_input('Geschwindigkeit:')
@@ -19,8 +19,6 @@ def talker():
 
         message = PointStamped()
         message.header.stamp = rospy.Time.now()
-        #message.header.frame_id =1
-        #message.header.seq =2
         message.point.x=input_motor_speed#aktuell in tick rate(+- 3900)
         message.point.y=2#not used
         message.point.z=0#in grad(max +-20)

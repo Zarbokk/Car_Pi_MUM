@@ -57,6 +57,7 @@ def talker():
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(30) # 10hz
+    max_speed=4094
     input_motor_speed=0
     while not rospy.is_shutdown():
         for event in pygame.event.get():
@@ -69,23 +70,27 @@ def talker():
             elif event.type == pygame.JOYHATMOTION:
                 hat_data[event.hat] = event.value
 
+        number= 200
+        if button_data[7]:
+            num = num + 3*number
+            if num<0:
+                num=num+number
+        else:
+            if num > 0:
+                num = num - 2*number
 
-            if button_data[7]:
-                num = num + 133
-            else:
-                if num > 0:
-                    num = num - 133
-
-            if button_data[0]:
-                num = num - 133
-            else:
-                if num < 0:
-                    num = num + 133
-            if num > 4094:
-                num = 4094
-            if num < -4094:
-                num = -4094
-            angle = axis_data[0] * 30
+        if button_data[6]:
+            num = num - 3*number
+            if num>0:
+                num=num-number
+        else:
+            if num < 0:
+                num = num + 2*number
+        if num > max_speed:
+            num = max_speed
+        if num < -max_speed:
+            num = -max_speed
+        angle = axis_data[0] * 29
         #num=axis_data[1]*-4000
         #angle=axis_data[0]*35
 

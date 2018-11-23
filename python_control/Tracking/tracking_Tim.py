@@ -5,14 +5,13 @@ import numpy as np
 (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
 
 if __name__ == '__main__':
-
     # Set up tracker.
     # Instead of MIL, you can also use
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT']
     #4 oder 7
-    tracker_type = tracker_types[7]
-
+    tracker_type = tracker_types[4]
+    print minor_ver
     if int(minor_ver) < 3:
         tracker = cv2.Tracker_create(tracker_type)
     else:
@@ -34,7 +33,7 @@ if __name__ == '__main__':
             tracker = cv2.TrackerCSRT_create()
 
     # Read video
-    video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV",cv2.IMREAD_GRAYSCALE)
+    video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV",cv2.IMREAD_GRAYSCALE)
     # Exit if video not opened.
     if not video.isOpened():
         print ("Could not open video")
@@ -42,7 +41,7 @@ if __name__ == '__main__':
 
     # Read first frame.
     ok, frame = video.read()
-    #frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
+    frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
     #img = frame
     #imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
@@ -63,9 +62,9 @@ if __name__ == '__main__':
     while True:
         # Read a new frame
         ok, frame = video.read()
-        #frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
+        frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
         #img = frame
-        #imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        #mgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         #imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
         #frame = cv2.Canny(imgray, 100, 150)
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -92,7 +91,6 @@ if __name__ == '__main__':
 
         if not ok:
             break
-
         # Start timer
         timer = cv2.getTickCount()
 
