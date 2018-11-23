@@ -1,5 +1,6 @@
 import cv2
 import sys
+import numpy as np
 
 (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
 
@@ -41,11 +42,11 @@ if __name__ == '__main__':
 
     # Read first frame.
     ok, frame = video.read()
-    frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
-    img = frame
-    imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
-    frame = cv2.Canny(imgray, 50, 150)
+    #frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
+    #img = frame
+    #imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
+    #frame = cv2.Canny(imgray, 50, 150)
     if not ok:
         print ('Cannot read video file')
         sys.exit()
@@ -62,12 +63,33 @@ if __name__ == '__main__':
     while True:
         # Read a new frame
         ok, frame = video.read()
-        frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
-        img = frame
-        imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
-        frame = cv2.Canny(imgray, 100, 150)
+        #frame = cv2.resize(frame, (0, 0), fx=0.1, fy=0.1)
+        #img = frame
+        #imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        #imgray = cv2.GaussianBlur(imgray, (5, 5), 1)
+        #frame = cv2.Canny(imgray, 100, 150)
         #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # img =frame
+        frame = cv2.GaussianBlur(frame, (11, 11), 0)
+        frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        # construct a mask for the color "green", then perform
+        # a series of dilations and erosions to remove any small
+        # blobs left in the mask
+        lower_red = np.array([0, 50, 50])
+        upper_red = np.array([10, 255, 255])
+        mask0 = cv2.inRange(frame, lower_red, upper_red)
+
+        # upper mask (170-180)
+        lower_red = np.array([170, 50, 50])
+        upper_red = np.array([180, 255, 255])
+        mask1 = cv2.inRange(frame, lower_red, upper_red)
+        mask = mask0 + mask1
+
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+        frame = mask
+
         if not ok:
             break
 
