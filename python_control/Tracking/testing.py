@@ -1,29 +1,26 @@
 import cv2
 import numpy as np
-class contour_data():
-    def __init__(self, x, y, w,h,area,solidity):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-        self.area = area
-        self.solidity = solidity
 
 
 
 
-
-largest_area=0;
+largest_area=0
 largest_contour_index=0
 video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
 ok, frame = video.read()
-
-
+solidity_1 = 0.9
+solidity_0 = 0.9
+x_pos_old_0 = 500
+y_pos_old_0 = 1000
+x_pos_old_1 = 1000
+y_pos_old_1 = 1000
+area_0 = 700
+area_1 = 700
 while(1):
     ok, frame = video.read()
     #frame=cv2.cvCvtColor(imageBgr, imageHsv, CV_RGB2HSV);
 
-    #frame = cv2.resize(frame, (0,0), fx=0.25, fy=0.25)
+    frame = cv2.resize(frame, (0,0), fx=0.8, fy=0.8)
     #img =frame
     frame = cv2.GaussianBlur(frame, (11, 11), 0)
     frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -45,32 +42,62 @@ while(1):
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
     frame = mask
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    frame = cv2.dilate(frame, kernel)
+    cv2.imshow('largest contour',frame)
+    cv2.waitKey()
     #frame = cv2.GaussianBlur(frame, (5, 5),1)
     #frame = cv2.Canny(frame, 35, 100)
 
     image, contours, hierarchy = cv2.findContours(frame, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     simpleList = []
-    data_matrix=np.matrix('0 1 2 3 4 5')
+    data_matrix=np.array([0 ,1, 2, 3, 4, 5, 6, 7])
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         area = cv2.contourArea(cnt)
+        print(area)
         hull = cv2.convexHull(cnt)
         hull_area = cv2.contourArea(hull)
         solidity = float(area) / hull_area
-        newrow = [x, y, w,h,area,solidity]
+        distance_0 = np.sqrt((x_pos_old_0-x-w/2)*(x_pos_old_0-x-w/2)+(y_pos_old_0-y-h/2)*(y_pos_old_0-y-h/2))
+        distance_1 = np.sqrt((x_pos_old_1-x-w/2)*(x_pos_old_1-x-w/2)+(y_pos_old_1-y-h/2)*(y_pos_old_1-y-h/2))
+        newrow = [x, y, w,h,area,solidity,distance_0,distance_1]
         data_matrix = np.vstack([data_matrix, newrow])
-        #break
-    #print(data_matrix.shape)
-    data_matrix=data_matrix[1:,:]
-    #print(data_matrix[:,1].shape)
-    sorted_by_pos=sorted(data_matrix[:,1])
-    bottom_pos=sorted_by_pos[-1]
-    bottom_pos2 = sorted_by_pos[-2]
-    pos=np.where(data_matrix == bottom_pos2)
-    #print(pos)
+    data_matrix = data_matrix[1:, :]
+    data_matrix=data_matrix[ data_matrix[:,4] > min(area_0,area_1)/2,:]
+    data_matrix = data_matrix[data_matrix[:, 4] < max(area_0,area_1)*2, :]
+    data_matrix = data_matrix[data_matrix[:, 5] > min(solidity_0,solidity_1)*0.5, :]
+    print(data_matrix.shape)
+    sorted_by_pos_0 = sorted(data_matrix[:, 6])
+    sorted_by_pos_1 = sorted(data_matrix[:, 7])
+    bottom_pos_0 = sorted_by_pos_0[0]
+    bottom_pos_1 = sorted_by_pos_1[0]
+    pos_0 = np.where(data_matrix[:,6] == bottom_pos_0)
+    pos_1 = np.where(data_matrix[:,7] == bottom_pos_1)
+    print(data_matrix.shape)
+    print(np.asarray(pos_1).size)
+    print(data_matrix[pos_0[0], :])
     #print(data_matrix[pos[0],pos[1]])
-    print(data_matrix[pos[0],:])
-    edged = cv2.rectangle(frame, (data_matrix[pos[0],0], data_matrix[pos[0],1]), (data_matrix[pos[0],0] + data_matrix[pos[0],2], data_matrix[pos[0],1] + data_matrix[pos[0],3]), 100, 2)
+    #print(data_matrix[pos[0],:])
+    edged = cv2.rectangle(frame, (data_matrix[pos_0[0], 0], data_matrix[pos_0[0], 1]), (
+    data_matrix[pos_0[0], 0] + data_matrix[pos_0[0], 2],
+    data_matrix[pos_0[0], 1] + data_matrix[pos_0[0], 3]), 100, 2)
+
+    edged = cv2.rectangle(edged, (data_matrix[pos_1[0], 0], data_matrix[pos_1[0], 1]), (
+    data_matrix[pos_1[0], 0] + data_matrix[pos_1[0], 2],
+    data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3]), 100, 2)
+
+    x_pos_old_0=data_matrix[pos_0[0], 0]+data_matrix[pos_0[0], 2]/2
+    y_pos_old_0 = data_matrix[pos_0[0], 1] + data_matrix[pos_0[0], 3] / 2
+    area_0 = data_matrix[pos_0[0], 4]
+    solidity_0 = data_matrix[pos_0[0], 5]
+
+    x_pos_old_1=data_matrix[pos_1[0], 0]+data_matrix[pos_1[0], 2]/2
+    y_pos_old_1 = data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3] / 2
+    area_1 = data_matrix[pos_1[0], 4]
+    solidity_1 = data_matrix[pos_1[0], 5]
+    #edged = cv2.rectangle(frame, (data_matrix[pos_0[1][0],0], data_matrix[pos_0[1][0],1]), (data_matrix[pos_0[1][0],0] + data_matrix[pos_0[1][0],2], data_matrix[pos_0[1][0],1] + data_matrix[pos_0[1][0],3]), 100, 2)
+    #edged = cv2.rectangle(edged, (data_matrix[pos_1[0], 0], data_matrix[pos_1[0], 1]), (data_matrix[pos_1[0], 0] + data_matrix[pos_1[0], 2], data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3]), 100, 2)
     #for x in simpleList:
 
     #edged = cv2.rectangle(image, (x, y), (x + w, y + h), 100, 2)
