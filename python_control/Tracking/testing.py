@@ -7,8 +7,8 @@ import numpy as np
 largest_area=0
 largest_contour_index=0
 #video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
-video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV")
-
+#video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV")
+video = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
 ok, frame = video.read()
 
 solidity_1 = 0.9
