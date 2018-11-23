@@ -8,36 +8,46 @@ largest_area=0
 largest_contour_index=0
 #video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
 #video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV")
-video = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
-ok, frame = video.read()
+#video = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
+video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/1280_32.avi")
 
 solidity_1 = 0.9
 solidity_0 = 0.9
-x_pos_old_0 = 500
-y_pos_old_0 = 1000
-x_pos_old_1 = 1000
-y_pos_old_1 = 1000
-area_0 = 700
-area_1 = 700
+x_pos_old_0 = 647
+y_pos_old_0 = 500
+x_pos_old_1 = 960
+y_pos_old_1 = 500
+area_0 = 400
+area_1 = 400
+
 while(1):
     ok, frame = video.read()
+    print(frame.shape)
+    #print(x_pos_old_0,x_pos_old_1)
+    im_color = cv2.applyColorMap(frame, cv2.COLORMAP_HSV)
+    print(im_color.shape)
     #frame=cv2.cvCvtColor(imageBgr, imageHsv, CV_RGB2HSV);
-
-    frame = cv2.resize(frame, (0,0), fx=0.8, fy=0.8)
+    #frame = cv2.resize(frame, (0,0), fx=0.8, fy=0.8)
     #img =frame
+    im_color = cv2.GaussianBlur(im_color, (11, 11), 0)
+    cv2.imshow('largest contour', im_color)
+    cv2.waitKey()
+
+    #frame = cv2.bilateralFilter(frame, 9, 10, 10)
     frame = cv2.GaussianBlur(frame, (11, 11), 0)
     frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
+    cv2.imshow('largest contour', frame)
+    cv2.waitKey()
 
     # construct a mask for the color "green", then perform
     # a series of dilations and erosions to remove any small
     # blobs left in the mask
     lower_red = np.array([0,50,50])
-    upper_red = np.array([10,255,255])
+    upper_red = np.array([25,255,255])
     mask0 = cv2.inRange(frame, lower_red, upper_red)
 
     # upper mask (170-180)
-    lower_red = np.array([170,50,50])
+    lower_red = np.array([160,50,50])
     upper_red = np.array([180,255,255])
     mask1 = cv2.inRange(frame, lower_red, upper_red)
     mask = mask0 + mask1
@@ -89,16 +99,16 @@ while(1):
     edged = cv2.rectangle(edged, (data_matrix[pos_1[0], 0], data_matrix[pos_1[0], 1]), (
     data_matrix[pos_1[0], 0] + data_matrix[pos_1[0], 2],
     data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3]), 100, 2)
+    if(pos_0[0] != pos_1[0]):
+        x_pos_old_0=data_matrix[pos_0[0], 0]+data_matrix[pos_0[0], 2]/2
+        y_pos_old_0 = data_matrix[pos_0[0], 1] + data_matrix[pos_0[0], 3] / 2
+        area_0 = data_matrix[pos_0[0], 4]
+        solidity_0 = data_matrix[pos_0[0], 5]
 
-    x_pos_old_0=data_matrix[pos_0[0], 0]+data_matrix[pos_0[0], 2]/2
-    y_pos_old_0 = data_matrix[pos_0[0], 1] + data_matrix[pos_0[0], 3] / 2
-    area_0 = data_matrix[pos_0[0], 4]
-    solidity_0 = data_matrix[pos_0[0], 5]
-
-    x_pos_old_1=data_matrix[pos_1[0], 0]+data_matrix[pos_1[0], 2]/2
-    y_pos_old_1 = data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3] / 2
-    area_1 = data_matrix[pos_1[0], 4]
-    solidity_1 = data_matrix[pos_1[0], 5]
+        x_pos_old_1=data_matrix[pos_1[0], 0]+data_matrix[pos_1[0], 2]/2
+        y_pos_old_1 = data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3] / 2
+        area_1 = data_matrix[pos_1[0], 4]
+        solidity_1 = data_matrix[pos_1[0], 5]
     #edged = cv2.rectangle(frame, (data_matrix[pos_0[1][0],0], data_matrix[pos_0[1][0],1]), (data_matrix[pos_0[1][0],0] + data_matrix[pos_0[1][0],2], data_matrix[pos_0[1][0],1] + data_matrix[pos_0[1][0],3]), 100, 2)
     #edged = cv2.rectangle(edged, (data_matrix[pos_1[0], 0], data_matrix[pos_1[0], 1]), (data_matrix[pos_1[0], 0] + data_matrix[pos_1[0], 2], data_matrix[pos_1[0], 1] + data_matrix[pos_1[0], 3]), 100, 2)
     #for x in simpleList:

@@ -1,41 +1,47 @@
-# import the necessary packages
-import numpy as np
 import cv2
-import imutils
-from imutils import paths
-def distance_to_camera(knownWidth, focalLength, perWidth):
-    # compute and return the distance from the maker to the camera
-    return (knownWidth * focalLength) / perWidth
+import numpy as np
 
-# convert the image to grayscale, blur it, and detect edges
-video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
-ok, frame = video.read()
-frame = cv2.resize(frame, (0,0), fx=0.25, fy=0.25)
-gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-gray = cv2.GaussianBlur(gray, (5, 5), 0)
-edged = cv2.Canny(gray, 35, 125)
 
-# find the contours in the edged image and keep the largest one;
-# we'll assume that this is our piece of paper in the image
-contours = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-cnt = contours[0]
+
 
 largest_area=0
-for i in contours:
-    area = cv2.contourArea(cnt)
-    if (area>largest_area):
-        largest_area=area
-        largest_contour_index=i
-        bounding_rect=cv2.boundingRect(contours[i])
-rect=edged(bounding_rect).clone()
-cv2.imshow('largest contour ',rect)
+largest_contour_index=0
+#video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
+#video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV")
+#video = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
+video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/1280_32.avi")
+
+while(1):
+    ok, frame = video.read()
+
+    frame = cv2.applyColorMap(frame, cv2.COLORMAP_RAINBOW)
+
+    cv2.imshow('largest contour', frame)
+    cv2.waitKey()
+
+#frame=cv2.cvCvtColor(imageBgr, imageHsv, CV_RGB2HSV);
+#frame = cv2.resize(frame, (0,0), fx=0.8, fy=0.8)
+#img =frame
+#cv2.imshow('largest contour', cl1)
+cv2.imshow('R-RGB',im_color)
 cv2.waitKey()
-cv2.destroyAllWindows()
-#cv2.imshow("huhu",cnts)
-#cv2.waitKey(0)
-cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-c = max(cnts, key=cv2.contourArea)
-#cv2.imshow("huhu",cv2.minAreaRect(c))
-print(cv2.minAreaRect())
-# compute the bounding box of the of the paper region and return it
-#cv2.imshow(cv2.minAreaRect(c))
+frame = cv2.GaussianBlur(frame, (11, 11), 0)
+frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+cv2.imshow('largest contour', hsv)
+cv2.waitKey()
+# construct a mask for the color "green", then perform
+# a series of dilations and erosions to remove any small
+# blobs left in the mask
+# upper mask (170-180)
+lower_red = np.array([0,0,0])
+upper_red = np.array([180,150,150])
+mask1 = cv2.inRange(frame, lower_red, upper_red)
+mask = mask1
+
+mask = cv2.erode(mask, None, iterations=2)
+mask = cv2.dilate(mask, None, iterations=2)
+frame = mask
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+frame = cv2.dilate(frame, kernel)
+cv2.imshow('largest contour',frame)
+cv2.waitKey()
