@@ -56,7 +56,7 @@ def talker():
 
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(30) # 10hz
+    rate = rospy.Rate(100) # 10hz
     max_speed=4094
     input_motor_speed=0
     while not rospy.is_shutdown():
