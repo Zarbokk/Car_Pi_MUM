@@ -7,6 +7,8 @@ from geometry_msgs.msg import PointStamped
 from pyquaternion import Quaternion
 from nav_msgs.msg import Odometry
 
+import time
+
 def rotationMatrixToEulerAngles(R):
     sy = np.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
     singular = sy < 1e-6
@@ -37,6 +39,8 @@ def angularDiff(a,b):
         diff = diff - np.pi * 2
     return diff
 def setPos(odometry_data,x,y):  # has to be queed every step
+
+
     my_quaternion = Quaternion(np.asarray(
         [odometry_data.pose.pose.orientation.x, odometry_data.pose.pose.orientation.y, odometry_data.pose.pose.orientation.z,
          odometry_data.pose.pose.orientation.w]))
@@ -60,12 +64,13 @@ def setPos(odometry_data,x,y):  # has to be queed every step
     #v_wanted = maxValue(v_wanted, 4095)
     #accell_in = Kacell * (v_wanted - speed_car)
     accell_in = maxValue(Kacell*v_wanted, 2094)
+
     return(steering,accell_in)
 
 
 
 rospy.init_node('subscriber', anonymous=True)
-pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
+pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
 rate = rospy.Rate(100)  # Frequenz der Anwendung
 
 Kv = 0.5
@@ -75,7 +80,7 @@ saved_steering = 0
 tetta_car_ofset=40
 
 def talker(odometry_data):
-
+    start = time.time()
 
     input_motor_speed=0
     #odometry= Odometry()
@@ -90,6 +95,8 @@ def talker(odometry_data):
     message.point.z=steering#in grad(max +-20)
     rospy.loginfo(message)
     pub.publish(message)
+    diff=time.time()-start
+    print(diff)
     rate.sleep()
 
 

@@ -90,6 +90,8 @@ def talker():
             num = max_speed
         if num < -max_speed:
             num = -max_speed
+        if num >-number/2 and num<number/2:
+            num=0
         angle = axis_data[0] * 29
         #num=axis_data[1]*-4000
         #angle=axis_data[0]*35
