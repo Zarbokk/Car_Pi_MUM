@@ -39,9 +39,10 @@ area_1 = 400
 
 
 while(1):
-
+    cv2.imshow('largest contour', frame)
+    cv2.waitKey()
     frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    #cv2.imshow('largest contour', frame)
+    ##cv2.imshow('largest contour', frame)
     #cv2.waitKey()
     frame = cv2.GaussianBlur(frame, (11, 11), 0)
     lower_red = np.array([0,50,50])
