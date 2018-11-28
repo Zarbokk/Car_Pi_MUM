@@ -9,7 +9,9 @@ largest_contour_index=0
 #video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/IMG_3161.MOV")
 #video = cv2.VideoCapture("/home/tim/Downloads/IMG_3161.MOV")
 #video = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
-video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/1280_32.avi")
+
+video = cv2.VideoCapture("/home/tim/Dokumente/1280_32.avi")
+#video = cv2.VideoCapture("F:/OneDrive/Uni/StudienArbeit/Auto_Gruppe/Tracking_Auto/1280_32.avi")
 #ok, frame = video.read()
 
 
