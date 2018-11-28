@@ -41,6 +41,11 @@ area_1 = 400
 
 
 while(1):
+    cv2.imshow('largest contour', frame)
+    cv2.waitKey()
+    r, g, b =cv2.split(frame)
+    #cv2.imshow('largest contour', r)
+    #cv2.waitKey()
 
     frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     #cv2.imshow('largest contour', frame)
