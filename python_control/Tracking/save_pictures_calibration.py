@@ -37,8 +37,8 @@ def listener():
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    #1280
-    #x960
+    # 1280
+    # x960
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     video = cv2.VideoWriter('/home/tim/Dokumente/Video_car_find.avi', fourcc, 20.0, (1280, 960))
     #video=3
