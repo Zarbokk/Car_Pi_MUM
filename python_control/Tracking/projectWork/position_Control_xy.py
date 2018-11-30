@@ -66,23 +66,23 @@ def setPos(odometry_data,x,y):  # has to be queed every step
     accell_in = maxValue(Kacell*v_wanted, 2094)
 
     return(steering,accell_in)
-
+x_position=0
+y_position=0
 
 
 rospy.init_node('subscriber', anonymous=True)
 pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
-rate = rospy.Rate(100)  # Frequenz der Anwendung
+rate = rospy.Rate(150)  # Frequenz der Anwendung
 
 Kv = 0.5
 Kh = 1
 Kacell = 10
 saved_steering = 0
-tetta_car_ofset=40
-
+#tetta_car_ofset = 40
+tetta_car_ofset = 0
 def talker(odometry_data):
     start = time.time()
-
-    input_motor_speed=0
+    global x_position, y_position
     #odometry= Odometry()
     #odometry.pose.pose.orientation.x
     steering, accell_in =setPos(odometry_data,0,0)
@@ -99,10 +99,32 @@ def talker(odometry_data):
     print(diff)
     rate.sleep()
 
+def pos_drive_to():
+    #global x_position,y_position
+    while 1:
+        x_pos = raw_input('X Position:')
+        try:
+            x_position = float(x_pos)
+            break
+        except ValueError:
+            print('should have used a number')
+            continue
+    while 1:
+        y_pos = raw_input('Y Position:')
+        try:
+            y_position = float(y_pos)
+            break
+        except ValueError:
+            print('should have used a number')
+            continue
 
 def dxl_control():
 
     rospy.Subscriber('odometry_car', Odometry, talker)
+    #while not rospy.is_shutdown():
+        #rate.sleep()
+        #pos_drive_to()
+        # rospy.spin()
     rospy.spin()
 
 if __name__ == '__main__':
