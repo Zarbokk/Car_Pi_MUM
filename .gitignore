@@ -6,8 +6,8 @@ MATLAB/Steuerung/*.mexmaci64
 MATLAB/Steuerung/*.mat
 python_control/.idea/*
 tmux/
-
-
+*.slxc
+*.slx.original
 
 
 # Created by https://www.gitignore.io/api/c,tex,latex,matlab
