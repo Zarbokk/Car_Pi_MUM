@@ -2,20 +2,31 @@ import cv2
 import numpy as np
 
 class tracking_red_dots:
-    def __init__(self,height,width):
+    def __init__(self,height,width,x,w,y,h):
+        self.resize = 1
         self.first_done = False
         self.first_run_pos=[0,0,1,1]
         self.height = height
         self.width = width
         self.solidity_1 = 0.9
         self.solidity_0 = 0.9
-        self.x_pos_old_0 = 587*width/1280
-        self.y_pos_old_0 = 700*height/960
-        self.x_pos_old_1 = 700*width/1280
-        self.y_pos_old_1 = 700*height/960
-        self.area_0 = 400
-        self.area_1 = 400
+        self.x_pos_old_0 = 587*width/1280*self.resize
+        self.y_pos_old_0 = 700*height/960*self.resize
+        self.x_pos_old_1 = 700*width/1280*self.resize
+        self.y_pos_old_1 = 700*height/960*self.resize
+        self.area_0 = 400*self.resize
+        self.area_1 = 400*self.resize
     def get_red_pos(self,frame):
+
+        crop_img = frame[self.height/3:int(self.height/3*2.5), self.width/3:self.width/3*2]
+        #cv2.imshow('crop_image', crop_img)
+        #cv2.waitKey(1)
+        frame=crop_img
+
+        frame = cv2.resize(frame, (0, 0), fx=self.resize, fy=self.resize)
+
+
+
         #cv2.imshow('largest contour', frame)
         #cv2.waitKey()
         #r, g, b = cv2.split(frame)
@@ -103,7 +114,7 @@ class tracking_red_dots:
                 self.area_1 = data_matrix[pos_1[0], 4]
                 self.solidity_1 = data_matrix[pos_1[0], 5]
         else:
-            print("hello")
+            #print("hello")
             if (data_matrix[pos_1[0], 7] < self.width * 0.05 and data_matrix[pos_0[0], 6] < self.width * 0.05):
                 a = [data_matrix[pos_0[0], 0] - data_matrix[pos_1[0], 0],
                      data_matrix[pos_0[0], 1] - data_matrix[pos_1[0], 1]]
@@ -111,10 +122,10 @@ class tracking_red_dots:
                 angle = np.arccos(
                     (a[0] * b[0] + a[1] * b[1]) / np.sqrt(a[0] * a[0] + a[1] * a[1]) / np.sqrt(
                         b[0] * b[0] + b[1] * b[1]))
-                print(angle * 180 / 3.14159)
+                #print(angle * 180 / 3.14159)
                 #[x, y, w, h, area, solidity, distance_0, distance_1]
                 if (angle * 180 / 3.14159 < 15):
-                    print(angle * 180 / 3.14159)
+                    #print(angle * 180 / 3.14159)
                     self.x_pos_old_0 = data_matrix[pos_0[0], 0] + data_matrix[pos_0[0], 2] / 2
                     self.y_pos_old_0 = data_matrix[pos_0[0], 1] + data_matrix[pos_0[0], 3] / 2
                     self.area_0 = data_matrix[pos_0[0], 4]
@@ -155,8 +166,8 @@ class tracking_red_dots:
             self.y_pos_old_0 = self.first_run_pos[1]
             self.x_pos_old_1 = self.first_run_pos[2]
             self.y_pos_old_1 = self.first_run_pos[3]
-            self.area_0 = 400
-            self.area_1 = 400
+            self.area_0 = 400*self.resize
+            self.area_1 = 400*self.resize
 
         circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
         circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
@@ -166,7 +177,7 @@ class tracking_red_dots:
         if not self.first_done:
             self.first_run_pos=[self.x_pos_old_0,self.y_pos_old_0,self.x_pos_old_1,self.y_pos_old_1]
             self.first_done = True
-        return self.x_pos_old_0,self.y_pos_old_0,self.x_pos_old_1,self.y_pos_old_1
+        return self.x_pos_old_0/self.resize,self.y_pos_old_0/self.resize,self.x_pos_old_1/self.resize,self.y_pos_old_1/self.resize
 
 
 
