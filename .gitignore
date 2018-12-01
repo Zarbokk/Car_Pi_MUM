@@ -482,3 +482,4 @@ octave-workspace
 
 
 # End of https://www.gitignore.io/api/c,tex,latex,matlab
+*.pyc
