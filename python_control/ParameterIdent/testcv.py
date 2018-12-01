@@ -51,6 +51,7 @@ while ok:
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 print(ret)
 print(mtx)
+print(np.asarray(np.invert(mtx)))
 np.savez("camParam",ret, mtx, dist, rvecs, tvecs)
 # mtx are intrinsic parameters: focallength and optical centers
 # rotation and translationvectors for each chesspattern
