@@ -12,7 +12,7 @@ def talker():
     while not rospy.is_shutdown():
         num = raw_input('Geschwindigkeit:')
         try:
-            input_motor_speed=float(num)
+            input_motor_speed=int(num)
         except ValueError:
             print('should have used a number')
             continue

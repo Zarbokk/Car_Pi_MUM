@@ -1,32 +1,10 @@
+# !/usr/bin/env python
 from red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image, CompressedImage
 import cv2
 import rospy
 import numpy as np
-#video = cv2.VideoCapture("/home/tim/Dokumente/1280_32.avi")
-#ok, frame = video.read()
-#tracker = tracking_red_dots(np.size(frame, 0),np.size(frame, 1))
-
-#while ok:
-#
-
-#    x_0, y_0, x_1, y_1 = tracker.get_red_pos(frame)#
-
-#    circle= cv2.circle(frame, (x_1, y_1), 5, 120, -1)
-#    circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
-#    cv2.imshow('largest contour',circle)
-#    cv2.waitKey()
-#    ok, frame = video.read()
-
-
-
-
-
-
-
-
-# !/usr/bin/env python
 
 
 
