@@ -1,7 +1,5 @@
-<aside class="warning">
-    Alles hier ist derzeit noch Work in Progress.
-</aside>
-
+| :warning: Alles hier ist derzeit noch Work in Progress.|
+| --- |
 # Python/ROS Ansteuerung
 Im Folgenden wird die Ansteuerung des Autos durch [ROS (Roboter Operating System)](http://www.ros.org/) beschrieben, insbesondere:
 
@@ -17,17 +15,16 @@ Dazu wird Folgendes benoetigt :
 3. ROS Kinetic
 4. Eventuell andere Packages wie z.B. OpenCV
  -->
-<aside class="warning">
-Auf Windows/OS X ist die Installation von ROS äußerst schwierig. Für Ubuntu gibt es fertige Pakete für `apt`.
-</aside>
+| :warning: Auf Windows/OS X ist die Installation von ROS äußerst schwierig. Für Ubuntu gibt es fertige Pakete für `apt`.|
+| --- |
 
 Das Image was auf die SD Karte gezogen werden muss ist hier downzuloaden: https://downloads.ubiquityrobotics.com/
 Hier steht auch wie man sich mit dem PI verbindet.
 
-<aside class="notice">
-- Bei Installation unbedingt auf automatisches Login achten, damit das WLAN automatisch startet
-- Speichert das alte Image falls ihr zu Matlab zurueck wollt
-</aside>
+| :heavy_exclamation_mark: Notice|
+| - Bei Installation unbedingt auf automatisches Login achten, damit das WLAN automatisch startet|
+| - Speichert das alte Image falls ihr zu Matlab zurueck wollt|
+| --- |
 
 
 Fuer die ROS nutzung muss am anfang folgendes Erledigt werden:
