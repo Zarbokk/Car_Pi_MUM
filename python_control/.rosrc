@@ -1,0 +1,2 @@
+export ROS_MASTER_URI=http://nalbers-ubuntu:11311
+export ROS_HOSTNAME=nalbers-ubuntu
