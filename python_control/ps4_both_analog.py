@@ -13,10 +13,6 @@ Copyright © 2015 Clay L. McLeod <clay.l.mcleod@gmail.com>
 
 Distributed under terms of the MIT license.
 """
-import os
-import time
-
-import pprint
 import pygame
 import rospy
 
@@ -24,7 +20,6 @@ from geometry_msgs.msg import PointStamped
 
 
 def talker():
-
     controller = None
     axis_data = None
     button_data = None

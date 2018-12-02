@@ -29,7 +29,7 @@ def send_data(pwm):
     if motor_input_value >= -4095 and motor_input_value <= 0:
         # moving backwards
         pwm.set_pwm(11, 0, 0)
-        pwm.set_pwm(10, 0, - int(motor_input_value))
+        pwm.set_pwm(10, 0, -1 * int(motor_input_value))
     if motor_input_value <= 4095 and motor_input_value >= 0:
         # moving forward
         pwm.set_pwm(11, 0, int(motor_input_value))

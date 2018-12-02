@@ -16,8 +16,9 @@ class tracking_red_dots:
         self.y_pos_old_1 = 700*height/960*self.resize
         self.area_0 = 400*self.resize
         self.area_1 = 400*self.resize
-    def get_red_pos(self,frame):
 
+
+    def get_red_pos(self,frame):
         crop_img = frame[self.height/3:int(self.height/3*2.5), self.width/3:self.width/3*2]
         #cv2.imshow('crop_image', crop_img)
         #cv2.waitKey(1)
@@ -64,10 +65,14 @@ class tracking_red_dots:
             hull = cv2.convexHull(cnt)
             hull_area = cv2.contourArea(hull)
             solidity = float(area) / hull_area
-            distance_0 = np.sqrt((self.x_pos_old_0 - x - w / 2) * (self.x_pos_old_0 - x - w / 2) + (self.y_pos_old_0 - y - h / 2) * (
-                    self.y_pos_old_0 - y - h / 2))
-            distance_1 = np.sqrt((self.x_pos_old_1 - x - w / 2) * (self.x_pos_old_1 - x - w / 2) + (self.y_pos_old_1 - y - h / 2) * (
-                    self.y_pos_old_1 - y - h / 2))
+            distance_0 = np.sqrt(
+                (self.x_pos_old_0 - x - w / 2)**2 +
+                (self.y_pos_old_0 - y - h / 2)**2
+            )
+            distance_1 = np.sqrt(
+                (self.x_pos_old_1 - x - w / 2)**2 +
+                (self.y_pos_old_1 - y - h / 2)**2
+            )
             newrow = [x, y, w, h, area, solidity, distance_0, distance_1]
             data_matrix = np.vstack([data_matrix, newrow])
         data_matrix = data_matrix[1:, :]
