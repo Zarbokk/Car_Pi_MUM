@@ -21,10 +21,10 @@ Dazu wird Folgendes benoetigt :
 Das Image was auf die SD Karte gezogen werden muss ist hier downzuloaden: https://downloads.ubiquityrobotics.com/
 Hier steht auch wie man sich mit dem PI verbindet.
 
-| :heavy_exclamation_mark: Notice|
+| :heavy_exclamation_mark: |
+-------------- | 
 | - Bei Installation unbedingt auf automatisches Login achten, damit das WLAN automatisch startet|
 | - Speichert das alte Image falls ihr zu Matlab zurueck wollt|
-| --- |
 
 
 Fuer die ROS nutzung muss am anfang folgendes Erledigt werden:
