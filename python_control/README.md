@@ -73,8 +73,10 @@ if you want to use tmux:
 To get and build the latest from version control:
 
     $ git clone https://github.com/tmux/tmux.git
-    $ scp -r tmux ubuntu@ubiquityrobot:tmux
-    $ ssh ubuntu@ubiquityrobot
+    $ scp -r tmux ubuntu@rospi:tmux
+
+Now ssh into the pi with `ssh ubuntu@rospi` and execute
+
     $ cd tmux
     $ sh autogen.sh
     $ ./configure && make
