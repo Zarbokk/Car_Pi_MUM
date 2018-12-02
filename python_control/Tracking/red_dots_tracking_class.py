@@ -4,22 +4,31 @@ import numpy as np
 class tracking_red_dots:
     def __init__(self,height,width,x,w,y,h):
         self.resize = 1
+        self.x=x
+        self.y=y
+        self.w=w
+        self.h=h
         self.first_done = False
         self.first_run_pos=[0,0,1,1]
         self.height = height
         self.width = width
         self.solidity_1 = 0.9
         self.solidity_0 = 0.9
-        self.x_pos_old_0 = 587*width/1280*self.resize
-        self.y_pos_old_0 = 700*height/960*self.resize
-        self.x_pos_old_1 = 700*width/1280*self.resize
-        self.y_pos_old_1 = 700*height/960*self.resize
+        self.x_pos_old_0 = 587*width/1280*self.resize-x
+        self.y_pos_old_0 = 700*height/960*self.resize-y
+        self.x_pos_old_1 = 700*width/1280*self.resize-x
+        self.y_pos_old_1 = 700*height/960*self.resize-y
         self.area_0 = 400*self.resize
         self.area_1 = 400*self.resize
 
+<<<<<<< HEAD
 
     def get_red_pos(self,frame):
         crop_img = frame[self.height/3:int(self.height/3*2.5), self.width/3:self.width/3*2]
+=======
+        crop_img = frame[self.y:self.h, self.x:self.w]
+        #crop_img = frame[320:321,:960]
+>>>>>>> master
         #cv2.imshow('crop_image', crop_img)
         #cv2.waitKey(1)
         frame=crop_img
@@ -182,11 +191,16 @@ class tracking_red_dots:
         if not self.first_done:
             self.first_run_pos=[self.x_pos_old_0,self.y_pos_old_0,self.x_pos_old_1,self.y_pos_old_1]
             self.first_done = True
-        return self.x_pos_old_0/self.resize,self.y_pos_old_0/self.resize,self.x_pos_old_1/self.resize,self.y_pos_old_1/self.resize
+        return self.x_pos_old_0/self.resize+self.x,self.y_pos_old_0/self.resize+self.y,self.x_pos_old_1/self.resize+self.x,self.y_pos_old_1/self.resize+self.y
 
 
 
 
 
+<<<<<<< HEAD
 k=3
 print(k)
+=======
+#k=3
+#print(k)
+>>>>>>> master

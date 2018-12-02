@@ -10,7 +10,7 @@ import numpy as np
 
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
-rate = rospy.Rate(20)  # Frequenz der Anwendung
+rate = rospy.Rate(10)  # Frequenz der Anwendung
 
 first_run = True
 
@@ -91,7 +91,8 @@ def listener():
     # 1280
     # x960
     #tracker = tracking_red_dots(308,410)
-    tracker = tracking_red_dots(960, 1280)
+    tracker = tracking_red_dots(960, 1280,350,900,400,960)
+    #tracker = tracking_red_dots(960, 1280, 0, 1280, 0, 960)
     #fourcc = cv2.VideoWriter_fourcc(*'XVID')
     #video = cv2.VideoWriter('/home/tim/Dokumente/Video_car_find.avi', fourcc, 20.0, (1280, 960))
 
