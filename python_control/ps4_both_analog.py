@@ -36,6 +36,7 @@ def talker():
     pygame.joystick.init()
     controller = pygame.joystick.Joystick(0)
     controller.init()
+    rospy.loginfo('controller initialized')
     if not axis_data:
         axis_data = {}
 

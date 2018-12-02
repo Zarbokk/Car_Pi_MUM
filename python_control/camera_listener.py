@@ -1,10 +1,12 @@
 
 # !/usr/bin/env python
 
+import cv2
+
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import Image, CompressedImage
-import cv2
+
 import message_filters
 import rospy
 

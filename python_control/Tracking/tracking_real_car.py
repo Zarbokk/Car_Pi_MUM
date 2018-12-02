@@ -1,3 +1,4 @@
+# !/usr/bin/env python
 from red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
@@ -14,10 +15,6 @@ rate = rospy.Rate(10)  # Frequenz der Anwendung
 first_run = True
 
 x_0_true = y_0_true = x_1_true = y_1_true = 0
-
-
-# !/usr/bin/env python
-
 
 
 def callback(image,tracker):
