@@ -1,30 +1,27 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# This file presents an interface for interacting with the Playstation 4 Controller
-# in Python. Simply plug your PS4 controller into your computer using USB and run this
-# script!
-#
-# NOTE: I assume in this script that the only joystick plugged in is the PS4 controller.
-#       if this is not the case, you will need to change the class accordingly.
-#
-# Copyright © 2015 Clay L. McLeod <clay.l.mcleod@gmail.com>
-#
-# Distributed under terms of the MIT license.
+u"""
+This file presents an interface for interacting with the PS4 Controller.
 
+It was tested with USB and Bluetooth. Both worked, but don't rely on it.
+
+NOTE: I assume in this script that the only joystick plugged in is the PS4
+    controller. if this is not the case, you will need to change the class
+    accordingly.
+
+Copyright © 2015 Clay L. McLeod <clay.l.mcleod@gmail.com>
+
+Distributed under terms of the MIT license.
+"""
 import os
+import time
+
 import pprint
 import pygame
-
-
-
-
-
-#!/usr/bin/env python
-# license removed for brevity
-import time
 import rospy
+
 from geometry_msgs.msg import PointStamped
+
 
 def talker():
 
@@ -52,10 +49,9 @@ def talker():
 
     pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(100) # 100hz
-    max_speed=4094
-    input_motor_speed=0
-    angle=0
+    rate = rospy.Rate(100)  # 100 hz
+    input_motor_speed = 0
+    angle = 0
     while not rospy.is_shutdown():
         for event in pygame.event.get():
             if event.type == pygame.JOYAXISMOTION:
@@ -67,27 +63,22 @@ def talker():
             elif event.type == pygame.JOYHATMOTION:
                 hat_data[event.hat] = event.value
         print(axis_data)
-        #print(axis_data[3])
         try:
-            angle = axis_data[0] * 29
-            input_motor_speed=axis_data[4]*-4094
-        except Exception,e:
+            angle = 29 * axis_data[0]
+            input_motor_speed = -4094 * axis_data[4]
+        except Exception as e:
             print repr(e)
-    #    pass
-
 
         message = PointStamped()
         message.header.stamp = rospy.Time.now()
-        #message.header.frame_id = 1
-        #message.header.seq = 2
-        message.point.x=input_motor_speed#aktuell in tick rate(+- 3900)
-        message.point.y=2#not used
-        message.point.z=float(angle)#in grad(max +-20)
+        # message.header.frame_id = 1
+        # message.header.seq = 2
+        message.point.x = input_motor_speed  # aktuell in tick rate(+- 3900)
+        message.point.y = 2  # not used
+        message.point.z = float(angle)  # in grad(max +-20)
         rospy.loginfo(message)
         pub.publish(message)
         rate.sleep()
 
 if __name__ == '__main__':
-    #try:
     talker()
-    #except rospy.ROSInterruptException:

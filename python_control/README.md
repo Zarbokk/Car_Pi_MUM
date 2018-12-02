@@ -51,7 +51,8 @@ Das python Script Controller_Steuerung_PS4.py ermoeglicht die Steuerung des Auto
 
 
 
-
+| :warning: TODO: überarbeiten.|
+| --- |
 # Old docu by nico
 1. start ros master (directing and organizing all the communication) with `roscore` somewhere. Car should connect with master and master with connect. Same for camera and PC.
 2. Auto hat ein Topic (streamt z.B. bild), die kann der PC abfragen (list -> [Bild Auto])
@@ -62,8 +63,6 @@ RPY_Listener_motor.py (ROS_Listener_control_R_PI.py)
 test_ros_launch: schickt signal an den motor
 IMU_ROS_NODE: Imu auslesen
 camera_listener: 
-
-
 
 
 
