@@ -1,8 +1,8 @@
 # !/usr/bin/env python
-from red_dots_tracking_class import tracking_red_dots
+from car_scripts.red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
-from sensor_msgs.msg import Image, CompressedImage
+from sensor_msgs.msg import CompressedImage
 import cv2
 import rospy
 import numpy as np
@@ -92,6 +92,7 @@ def listener():
     # x960
     #tracker = tracking_red_dots(308,410)
     tracker = tracking_red_dots(960, 1280,350,900,400,960)
+    #tracker = tracking_red_dots(308, 410, 0, 410, 0, 308)
     #tracker = tracking_red_dots(960, 1280, 0, 1280, 0, 960)
     #fourcc = cv2.VideoWriter_fourcc(*'XVID')
     #video = cv2.VideoWriter('/home/tim/Dokumente/Video_car_find.avi', fourcc, 20.0, (1280, 960))
