@@ -1,5 +1,5 @@
 # !/usr/bin/env python
-from car_scripts.red_dots_tracking_class import tracking_red_dots
+from red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import CompressedImage
@@ -33,26 +33,27 @@ def callback(image,tracker):
         x_0, y_0, x_1, y_1 = tracker.get_red_pos(frame)
         circle= cv2.circle(frame, (x_1, y_1), 5, 120, -1)
         circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
+        cv2.imshow("Image Window", circle)
+        cv2.waitKey(1)
+        #print("distance from point start:",np.sqrt((x_0_true-x_1_true)*(x_0_true-x_1_true)+(y_0_true-y_1_true)*(y_0_true-y_1_true)))
+        #print("distance current:",
+        #      np.sqrt((x_0 - x_1) * (x_0 - x_1) + (y_0 - y_1) * (y_0 - y_1)))
 
-        print("distance from point start:",np.sqrt((x_0_true-x_1_true)*(x_0_true-x_1_true)+(y_0_true-y_1_true)*(y_0_true-y_1_true)))
-        print("distance current:",
-              np.sqrt((x_0 - x_1) * (x_0 - x_1) + (y_0 - y_1) * (y_0 - y_1)))
-
-        print("x Distance start",x_0_true-x_1_true)
-        print("x Distance current", x_0 - x_1)
-        print("y Distance start", y_0_true - y_1_true)
-        print("y Distance current", y_0 - y_1)
+        #print("x Distance start",x_0_true-x_1_true)
+        #print("x Distance current", x_0 - x_1)
+        #print("y Distance start", y_0_true - y_1_true)
+        #print("y Distance current", y_0 - y_1)
         #cv2.destroyAllWindows()
         #video.release()
         # (rows, cols, channels) = cv_image.shape
         # if cols > 60 and rows > 60:
         #     cv2.circle(cv_image, (50, 50), 10, 255)
         #gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-        cv2.imshow("Image Window", circle)
-        cv2.waitKey(1)
+
+
 
         distance=np.sqrt((x_0_true-x_1_true)*(x_0_true-x_1_true)+(y_0_true-y_1_true)*(y_0_true-y_1_true))-np.sqrt((x_0 - x_1) * (x_0 - x_1) + (y_0 - y_1) * (y_0 - y_1))
-        print("distance:", distance)
+        #print("distance:", distance)
 
         accel_in=feedbackControler(distance)
 
@@ -69,12 +70,12 @@ def callback(image,tracker):
 def feedbackControler(error):
     MAXERR=60
     MAXU=4095
-    if error<=0:
-        return 0
-    else:
-        error=error/MAXERR
-        gain=0.3
-        return gain*error*MAXU
+    #if error<=0:
+    #    return 0
+    #else:
+    error=error/MAXERR
+    gain=0.3
+    return gain*error*MAXU
 
 
 def listener():
