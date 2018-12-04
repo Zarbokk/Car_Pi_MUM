@@ -2,7 +2,7 @@
 from red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
 import cv2
 import rospy
 import numpy as np
@@ -10,31 +10,33 @@ import numpy as np
 
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
-rate = rospy.Rate(10)  # Frequenz der Anwendung
+rate = rospy.Rate(20)  # Frequenz der Anwendung
 
 first_run = True
 
 x_0_true = y_0_true = x_1_true = y_1_true = 0
-
+#cv2.CV_8UC3
 
 def callback(image,tracker):
+    #print(image.encoding)
     brige = CvBridge()
     try:
-        frame = brige.compressed_imgmsg_to_cv2(image, "passthrough")
+        #brige.
+        frame=brige.imgmsg_to_cv2(image, "bgr8")
+        #frame = brige.compressed_imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
     global first_run
     global x_0_true, y_0_true, x_1_true, y_1_true
-
     if first_run:
         x_0_true, y_0_true, x_1_true, y_1_true = tracker.get_red_pos(frame)
         first_run = False
     else:
         x_0, y_0, x_1, y_1 = tracker.get_red_pos(frame)
-        circle= cv2.circle(frame, (x_1, y_1), 5, 120, -1)
-        circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
-        cv2.imshow("Image Window", circle)
-        cv2.waitKey(1)
+        #circle = cv2.circle(frame, (x_1, y_1), 5, 120, -1)
+        #circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
+        #cv2.imshow("Image Window", circle)
+        #cv2.waitKey(1)
         #print("distance from point start:",np.sqrt((x_0_true-x_1_true)*(x_0_true-x_1_true)+(y_0_true-y_1_true)*(y_0_true-y_1_true)))
         #print("distance current:",
         #      np.sqrt((x_0 - x_1) * (x_0 - x_1) + (y_0 - y_1) * (y_0 - y_1)))
@@ -100,7 +102,7 @@ def listener():
 
     #video=3
     #rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, callback, tracker)
+    rospy.Subscriber("/raspicam_node/image", Image, callback, tracker)
     rospy.spin()
     #video.release()
     cv2.destroyAllWindows()

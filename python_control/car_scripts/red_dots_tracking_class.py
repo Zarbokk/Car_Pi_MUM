@@ -21,8 +21,8 @@ class tracking_red_dots:
         self.y_pos_old_0 = int((680 * height / 960 - y) * self.resize)
         self.x_pos_old_1 = int((700 * width / 1280 - x) * self.resize)
         self.y_pos_old_1 = int((680 * height / 960 - y) * self.resize)
-        self.area_0 = 300*self.resize
-        self.area_1 = 300*self.resize
+        self.area_0 = 600*self.resize
+        self.area_1 = 600*self.resize
 
 
     def get_red_pos(self, frame):
@@ -44,9 +44,13 @@ class tracking_red_dots:
         #cv2.imshow('largest contour', circle)
         #cv2.waitKey()
 
-        frame = hsv = cv2.GaussianBlur(frame, (11, 11), 0)
+
+        #frame = hsv = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB)
         frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+        frame = hsv = cv2.GaussianBlur(frame, (11, 11), 0)
+        #cv2.imshow('largest contour', hsv)
+        #cv2.waitKey()
 
         lower_red = np.array([0, 50, 50])
         upper_red = np.array([20, 255, 255])
@@ -58,10 +62,10 @@ class tracking_red_dots:
         #mask = cv2.erode(mask, None, iterations=2)
         #mask = cv2.dilate(mask, None, iterations=2)
         frame = mask
-        #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
-        #frame = cv2.dilate(frame, kernel)
-        # cv2.imshow('largest contour',frame)
-        # cv2.waitKey()
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        frame = cv2.dilate(frame, kernel)
+        #cv2.imshow('largest contour',frame)
+        #cv2.waitKey()
         image, contours, hierarchy = cv2.findContours(frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         data_matrix = np.array([0, 1, 2, 3, 4, 5, 6, 7])
         for cnt in contours:
@@ -178,11 +182,11 @@ class tracking_red_dots:
             self.area_0 = 400*self.resize
             self.area_1 = 400*self.resize
 
-        circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
-        circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
-        cv2.imshow('whiteDots', circle)
-        cv2.imshow('largest contour', hsv)
-        cv2.waitKey(1)
+        #circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
+        #circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
+        #cv2.imshow('whiteDots', circle)
+        #cv2.imshow('largest contour', hsv)
+        #cv2.waitKey(1)
         #cv2.waitKey()
         if not self.first_done:
             self.first_run_pos=[self.x_pos_old_0,self.y_pos_old_0,self.x_pos_old_1,self.y_pos_old_1]

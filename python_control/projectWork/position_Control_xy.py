@@ -10,6 +10,22 @@ from nav_msgs.msg import Odometry
 import time
 
 
+x_position = 0
+y_position = 0
+
+rospy.init_node('subscriber', anonymous=True)
+pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
+rate = rospy.Rate(250)  # Frequenz der Anwendung
+
+Kv = 0.5
+Kh = 1
+Kacell = 10
+saved_steering = 0
+# tetta_car_ofset = 40
+transform_angle_front=0.8156*180/3.14159
+tetta_car_ofset = transform_angle_front+6.268
+scaling_transform_axes=2.764
+
 def rotation_2d(x, y, angle):
     x2 = x * np.cos(angle) - np.sin(angle) * y
     y2 = x * np.sin(angle) + np.cos(angle) * y
@@ -63,16 +79,18 @@ def setPos(odometry_data, x, y):  # has to be queed every step
     theta_car = rotationMatrixToEulerAngles(my_quaternion.rotation_matrix)[0]+degreeToRad(tetta_car_ofset)
 
     distance = odometry_data.pose.pose.position.z
-    x_offset_car, y_offset_car = rotation_2d(1, 0, theta_car) * distance * 38.0/12.9
+    x_offset_car, y_offset_car = rotation_2d(1, 0, theta_car)
+    x_offset_car = x_offset_car * distance * scaling_transform_axes
+    y_offset_car = y_offset_car * distance * scaling_transform_axes
     x_position_car = odometry_data.pose.pose.position.x + x_offset_car
     y_position_car = odometry_data.pose.pose.position.y + y_offset_car
 
     theta_wanted = np.arctan2((y - y_position_car), (x - x_position_car))
-    print(theta_wanted)
-    print(theta_car)
+    #print(theta_wanted)
+    #print(theta_car)
     gamma = Kh * (angularDiff(theta_wanted, theta_car))
     gamma = maxValue(gamma * 180 / 3.14159, 29)
-    print(gamma)
+    #print(gamma)
     steering = gamma
 
     # saved_steering = gamma
@@ -84,21 +102,6 @@ def setPos(odometry_data, x, y):  # has to be queed every step
     accell_in = maxValue(Kacell * v_wanted, 4000)
 
     return (steering, accell_in)
-
-
-x_position = 0
-y_position = 0
-
-rospy.init_node('subscriber', anonymous=True)
-pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
-rate = rospy.Rate(150)  # Frequenz der Anwendung
-
-Kv = 0.5
-Kh = 1
-Kacell = 10
-saved_steering = 0
-# tetta_car_ofset = 40
-tetta_car_ofset = -40
 
 
 def talker(odometry_data):
