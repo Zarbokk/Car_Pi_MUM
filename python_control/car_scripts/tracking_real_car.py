@@ -22,13 +22,16 @@ def callback(image,tracker):
     brige = CvBridge()
     try:
         #brige.
-        frame=brige.imgmsg_to_cv2(image, "bgr8")
+        #frame=brige.imgmsg_to_cv2(image, "bgr8")
+        frame = brige.imgmsg_to_cv2(image, "passthrough")
         #frame = brige.compressed_imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
     global first_run
     global x_0_true, y_0_true, x_1_true, y_1_true
     if first_run:
+        #cv2.imshow("Image Window", frame)
+        #cv2.waitKey(1)
         x_0_true, y_0_true, x_1_true, y_1_true = tracker.get_red_pos(frame)
         first_run = False
     else:
@@ -76,7 +79,7 @@ def feedbackControler(error):
     #    return 0
     #else:
     error=error/MAXERR
-    gain=0.3
+    gain=0.6
     return gain*error*MAXU
 
 
@@ -94,7 +97,8 @@ def listener():
     # 1280
     # x960
     #tracker = tracking_red_dots(308,410)
-    tracker = tracking_red_dots(960, 1280,350,900,400,960)
+    #tracker = tracking_red_dots(960, 1280,350,900,400,960)
+    tracker = tracking_red_dots(576, 768, 210,540 , 240, 576)
     #tracker = tracking_red_dots(308, 410, 0, 410, 0, 308)
     #tracker = tracking_red_dots(960, 1280, 0, 1280, 0, 960)
     #fourcc = cv2.VideoWriter_fourcc(*'XVID')

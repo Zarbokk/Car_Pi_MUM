@@ -182,8 +182,8 @@ class tracking_red_dots:
             self.area_0 = 400*self.resize
             self.area_1 = 400*self.resize
 
-        #circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
-        #circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
+        #circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 2, 120, -1)
+        #circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 2, 120, -1)
         #cv2.imshow('whiteDots', circle)
         #cv2.imshow('largest contour', hsv)
         #cv2.waitKey(1)
