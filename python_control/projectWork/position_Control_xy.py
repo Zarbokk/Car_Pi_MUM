@@ -26,6 +26,16 @@ transform_angle_front=0.8156*180/3.14159
 tetta_car_ofset = transform_angle_front+6.268
 scaling_transform_axes=2.764
 
+def get_nearest_point(cicle,x,y,steps_ahead,N):
+    p=cicle-np.ones(N)*np.array([[x],[y]])
+    norm=np.linalg.norm(np.transpose(p), axis=1)
+    position=np.argmin(norm)
+    position=position+steps_ahead
+    while position>=N:
+        position=position-N
+    return position
+
+
 def rotation_2d(x, y, angle):
     x2 = x * np.cos(angle) - np.sin(angle) * y
     y2 = x * np.sin(angle) + np.cos(angle) * y
@@ -70,7 +80,7 @@ def angularDiff(a, b):
     return diff
 
 
-def setPos(odometry_data, x, y):  # has to be queed every step
+def setPos(odometry_data, data):  # has to be queed every step
 
     my_quaternion = Quaternion(np.asarray(
         [odometry_data.pose.pose.orientation.x, odometry_data.pose.pose.orientation.y,
@@ -84,6 +94,19 @@ def setPos(odometry_data, x, y):  # has to be queed every step
     y_offset_car = y_offset_car * distance * scaling_transform_axes
     x_position_car = odometry_data.pose.pose.position.x + x_offset_car
     y_position_car = odometry_data.pose.pose.position.y + y_offset_car
+
+
+
+    pos_in_array = get_nearest_point(np.transpose(data), x_position_car, y_position_car, 5, 364)
+
+    print(pos_in_array)
+    print(data[pos_in_array, 0], x_position_car)
+    print(data[pos_in_array, 1], y_position_car)
+    x_drive_to = data[pos_in_array, 0]
+    y_drive_to = data[pos_in_array, 1]
+
+
+
 
     theta_wanted = np.arctan2((y - y_position_car), (x - x_position_car))
     #print(theta_wanted)
@@ -104,12 +127,14 @@ def setPos(odometry_data, x, y):  # has to be queed every step
     return (steering, accell_in)
 
 
-def talker(odometry_data):
+def talker(odometry_data,data):
     start = time.time()
     global x_position, y_position
     # odometry= Odometry()
     # odometry.pose.pose.orientation.x
-    steering, accell_in = setPos(odometry_data, 0, 0)
+
+
+    steering, accell_in = setPos(odometry_data,data)
 
     # accell_in=0
     message = PointStamped()
@@ -145,7 +170,8 @@ def pos_drive_to():
 
 
 def dxl_control():
-    rospy.Subscriber('odometry_car', Odometry, talker)
+    data = np.load('track_x_y_pos.npy')
+    rospy.Subscriber('odometry_car', Odometry, talker,data)
     # while not rospy.is_shutdown():
     # rate.sleep()
     # pos_drive_to()

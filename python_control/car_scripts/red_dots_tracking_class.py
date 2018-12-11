@@ -6,7 +6,7 @@ import numpy as np
 
 class tracking_red_dots:
     def __init__(self, height, width, x, w, y, h):
-        self.resize = 0.6
+        self.resize = 1
         self.x = x
         self.y = y
         self.w = w
@@ -18,11 +18,11 @@ class tracking_red_dots:
         self.solidity_1 = 0.9
         self.solidity_0 = 0.9
         self.x_pos_old_0 = int((547 * width / 1280 - x) * self.resize)
-        self.y_pos_old_0 = int((680 * height / 960 - y) * self.resize)
+        self.y_pos_old_0 = int((640 * height / 960 - y) * self.resize)
         self.x_pos_old_1 = int((700 * width / 1280 - x) * self.resize)
-        self.y_pos_old_1 = int((680 * height / 960 - y) * self.resize)
-        self.area_0 = 600*self.resize
-        self.area_1 = 600*self.resize
+        self.y_pos_old_1 = int((640 * height / 960 - y) * self.resize)
+        self.area_0 = 400*self.resize
+        self.area_1 = 400*self.resize
 
 
     def get_red_pos(self, frame):
@@ -182,11 +182,13 @@ class tracking_red_dots:
             self.area_0 = 400*self.resize
             self.area_1 = 400*self.resize
 
-        #circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 2, 120, -1)
-        #circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 2, 120, -1)
-        #cv2.imshow('whiteDots', circle)
-        #cv2.imshow('largest contour', hsv)
-        #cv2.waitKey(1)
+        circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 2, 120, -1)
+        circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 2, 120, -1)
+        cv2.imshow('whiteDots', circle)
+        cv2.imshow('largest contour', hsv)
+        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_hsv.png", hsv)
+        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_dots.png", circle)
+        cv2.waitKey(1)
         #cv2.waitKey()
         if not self.first_done:
             self.first_run_pos=[self.x_pos_old_0,self.y_pos_old_0,self.x_pos_old_1,self.y_pos_old_1]

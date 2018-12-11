@@ -10,12 +10,63 @@ import numpy as np
 
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
-rate = rospy.Rate(20)  # Frequenz der Anwendung
+rate = rospy.Rate(25)  # Frequenz der Anwendung
 
 first_run = True
 
 x_0_true = y_0_true = x_1_true = y_1_true = 0
 #cv2.CV_8UC3
+
+car_input_last_step=0
+steering_angle_last_step=0
+
+
+
+def distanceControl(error,steering_in):
+    global car_input_last_step, steering_angle_last_step
+    MAXERR = 60
+    MAXU = 4095
+    MINU = 1000
+    MAXSTEERING = 29
+    TOL = 0.1
+    error = error / MAXERR
+    if error <= TOL:
+        return 0
+    gain = 0.7
+    k = 6
+    u = gain*error*MAXU*(1-np.abs(steering_in)/(MAXSTEERING*k))
+
+    return np.max([u, MINU])
+
+
+def angleControl(Point_left, Point_right, u0):
+    global car_input_last_step, steering_angle_last_step
+    '''
+    PARAMETERS
+    ----------
+    Point_left : nparray 2-Dim
+        Point_left[0] x
+        Point_left[1] y
+
+    Point_right : nparray 2-Dim
+        Point_right[0] x
+        Point_right[1] y
+
+    u0 : double
+        u0 midline of intrinsic matrix
+    '''
+    Point_left = np.asarray(Point_left)
+    Point_right = np.asarray(Point_right)
+    Threshold = u0 / 4
+    MAXSTEERING = 29
+    Midpoint = (Point_right + Point_left) / 2
+    HorizontalError = (u0 - Midpoint[0]) / Threshold
+    if np.abs(HorizontalError) < 1:
+        k = 1
+        # possible other control schemes
+        return -k * HorizontalError * MAXSTEERING
+    else:
+        return -np.sign(HorizontalError) * MAXSTEERING
 
 def callback(image,tracker):
     #print(image.encoding)
@@ -35,7 +86,15 @@ def callback(image,tracker):
         x_0_true, y_0_true, x_1_true, y_1_true = tracker.get_red_pos(frame)
         first_run = False
     else:
+
+
+
+
         x_0, y_0, x_1, y_1 = tracker.get_red_pos(frame)
+        frame = frame[250:576, 156:612]
+        cv2.imwrite("/home/tim/Dokumente/poster/crob_image.png", frame)
+        cv2.imshow("Image Window", frame)
+        cv2.waitKey()
         #circle = cv2.circle(frame, (x_1, y_1), 5, 120, -1)
         #circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
         #cv2.imshow("Image Window", circle)
@@ -60,27 +119,28 @@ def callback(image,tracker):
         distance=np.sqrt((x_0_true-x_1_true)*(x_0_true-x_1_true)+(y_0_true-y_1_true)*(y_0_true-y_1_true))-np.sqrt((x_0 - x_1) * (x_0 - x_1) + (y_0 - y_1) * (y_0 - y_1))
         #print("distance:", distance)
 
-        accel_in=feedbackControler(distance)
+        steering_in = angleControl([x_0, y_0], [x_1, y_1], 768 / 2)
+        accel_in = distanceControl(distance, steering_in)
+
+
+
+        global car_input_last_step,steering_angle_last_step
+
+
+        car_input_last_step = accel_in
+        steering_angle_last_step=steering_in
+        #accel_in=0
 
         message = PointStamped()
         message.header.stamp = rospy.Time.now()
         message.point.x = accel_in  # aktuell in tick rate(+- 3900)
         message.point.y = 2  # not used
-        message.point.z = 0  # in grad(max +-20)
+        message.point.z = steering_in  # in grad(max +-20)
         rospy.loginfo(message)
         pub.publish(message)
         rate.sleep()
     #cv2.waitKey()
 
-def feedbackControler(error):
-    MAXERR=60
-    MAXU=4095
-    #if error<=0:
-    #    return 0
-    #else:
-    error=error/MAXERR
-    gain=0.6
-    return gain*error*MAXU
 
 
 def listener():
@@ -98,7 +158,7 @@ def listener():
     # x960
     #tracker = tracking_red_dots(308,410)
     #tracker = tracking_red_dots(960, 1280,350,900,400,960)
-    tracker = tracking_red_dots(576, 768, 210,540 , 240, 576)
+    tracker = tracking_red_dots(576, 768, 156, 612, 250, 576)
     #tracker = tracking_red_dots(308, 410, 0, 410, 0, 308)
     #tracker = tracking_red_dots(960, 1280, 0, 1280, 0, 960)
     #fourcc = cv2.VideoWriter_fourcc(*'XVID')
