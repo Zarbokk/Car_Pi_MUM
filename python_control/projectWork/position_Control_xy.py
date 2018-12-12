@@ -19,12 +19,13 @@ rate = rospy.Rate(250)  # Frequenz der Anwendung
 
 Kv = 0.5
 Kh = 1
-Kacell = 10
+Kacell = 30
 saved_steering = 0
 # tetta_car_ofset = 40
 transform_angle_front=0.8156*180/3.14159
 tetta_car_ofset = transform_angle_front+6.268
 scaling_transform_axes=2.764
+
 
 def get_nearest_point(cicle,x,y,steps_ahead,N):
     p=cicle-np.ones(N)*np.array([[x],[y]])
@@ -78,7 +79,28 @@ def angularDiff(a, b):
     if (diff > np.pi):
         diff = diff - np.pi * 2
     return diff
-
+def calibrate(data):
+    x_0_meas = 6.57647705078
+    y_0_meas = 11.2200317383
+    x_1_meas = 552.037841797
+    y_1_meas = 347.904968262
+    # calibrierung
+    # x = 6.57647705078
+    # y = 11.2200317383
+    # x = 552.037841797
+    # y = 347.904968262
+    x_0_real = 6.57647705078
+    y_0_real = 11.2200317383
+    x_1_real = 552.037841797
+    y_1_real = 347.904968262
+    angle_real = np.arctan2((y_0_real - y_1_real), (x_0_real - x_1_real))
+    angle_meas = np.arctan2((y_0_meas - y_1_meas), (x_0_meas - x_1_meas))
+    difference = angularDiff(angle_real,angle_meas)
+    for i in range(0,data.shape[0]):
+        x, y = rotation_2d(data[i,0] - x_0_real + x_0_meas, data[i,1] - y_0_real + y_0_meas,difference)
+        data[i, 0] = x
+        data[i, 1] = y
+    return data
 
 def setPos(odometry_data, data):  # has to be queed every step
 
@@ -97,7 +119,7 @@ def setPos(odometry_data, data):  # has to be queed every step
 
 
 
-    pos_in_array = get_nearest_point(np.transpose(data), x_position_car, y_position_car, 5, 364)
+    pos_in_array = get_nearest_point(np.transpose(data), x_position_car, y_position_car, 10, 383)
 
     print(pos_in_array)
     print(data[pos_in_array, 0], x_position_car)
@@ -108,18 +130,18 @@ def setPos(odometry_data, data):  # has to be queed every step
 
 
 
-    theta_wanted = np.arctan2((y - y_position_car), (x - x_position_car))
+    theta_wanted = np.arctan2((y_drive_to - y_position_car), (x_drive_to - x_position_car))
     #print(theta_wanted)
     #print(theta_car)
     gamma = Kh * (angularDiff(theta_wanted, theta_car))
     gamma = maxValue(gamma * 180 / 3.14159, 29)
     #print(gamma)
-    steering = gamma
+    steering = -gamma
 
     # saved_steering = gamma
     v_wanted = Kv * np.sqrt(
-        (y - y_position_car) * (y - y_position_car) + (
-                x - x_position_car) * (x - x_position_car))
+        (y_drive_to - y_position_car) * (y_drive_to - y_position_car) + (
+                x_drive_to - x_position_car) * (x_drive_to - x_position_car))
     # v_wanted = maxValue(v_wanted, 4095)
     # accell_in = Kacell * (v_wanted - speed_car)
     accell_in = maxValue(Kacell * v_wanted, 4000)
@@ -170,7 +192,8 @@ def pos_drive_to():
 
 
 def dxl_control():
-    data = np.load('track_x_y_pos.npy')
+    data = np.load('track_x_y_pos_new.npy')
+    data=calibrate(data)
     rospy.Subscriber('odometry_car', Odometry, talker,data)
     # while not rospy.is_shutdown():
     # rate.sleep()
@@ -184,3 +207,4 @@ if __name__ == '__main__':
         dxl_control()
     except rospy.ROSInterruptException:
         pass
+

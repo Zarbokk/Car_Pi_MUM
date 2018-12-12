@@ -60,7 +60,7 @@ def talker():
         print(axis_data)
         try:
             angle = 29 * axis_data[0]
-            input_motor_speed = -4094 * axis_data[4]
+            input_motor_speed = -2094 * axis_data[4]
         except Exception as e:
             print repr(e)
 
