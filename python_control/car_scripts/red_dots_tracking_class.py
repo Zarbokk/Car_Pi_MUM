@@ -18,12 +18,13 @@ class tracking_red_dots:
         self.width = width  # 1280
         self.solidity_1 = 0.9
         self.solidity_0 = 0.9
-        self.x_pos_old_0 = 587 * width / 1280 * self.resize - x
-        self.y_pos_old_0 = 700 * height / 960 * self.resize - y
-        self.x_pos_old_1 = 700 * width / 1280 * self.resize - x
-        self.y_pos_old_1 = 700 * height / 960 * self.resize - y
-        self.area_0 = 400 * self.resize
-        self.area_1 = 400 * self.resize
+
+        self.x_pos_old_0 = int((547 * width / 1280 - x) * self.resize)
+        self.y_pos_old_0 = int((640 * height / 960 - y) * self.resize)
+        self.x_pos_old_1 = int((700 * width / 1280 - x) * self.resize)
+        self.y_pos_old_1 = int((640 * height / 960 - y) * self.resize)
+        self.area_0 = 400*self.resize
+        self.area_1 = 400*self.resize
 
     def get_red_pos(self, frame):
         """Get Red Position out of frame.
@@ -45,20 +46,21 @@ class tracking_red_dots:
         # r, g, b = cv2.split(frame)
         # cv2.imshow('largest contour', r)
         # cv2.waitKey()
-        # circle = cv2.circle(
-        #     frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
-        # circle = cv2.circle(
-        #     circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
-        # cv2.imshow('largest contour', circle)
-        # cv2.waitKey()
 
-        # convert colours to HSV format and apply Gaussian Blur
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        # cv2.imshow('largest contour', frame)
-        # cv2.waitKey()
-        frame = cv2.GaussianBlur(frame, (11, 11), 0)
+        #print(self.x_pos_old_1, self.y_pos_old_1)
+        #circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
+        #circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
+        #cv2.imshow('largest contour', circle)
+        #cv2.waitKey()
 
-        # apply mask to filter out red
+
+        #frame = hsv = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB)
+        frame = hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        frame = hsv = cv2.GaussianBlur(frame, (11, 11), 0)
+        #cv2.imshow('largest contour', hsv)
+        #cv2.waitKey()
+
         lower_red = np.array([0, 50, 50])
         upper_red = np.array([20, 255, 255])
         mask0 = cv2.inRange(frame, lower_red, upper_red)
@@ -68,23 +70,19 @@ class tracking_red_dots:
         mask1 = cv2.inRange(frame, lower_red, upper_red)
 
         mask = mask0 + mask1
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
+        #mask = cv2.erode(mask, None, iterations=2)
+        #mask = cv2.dilate(mask, None, iterations=2)
         frame = mask
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
         frame = cv2.dilate(frame, kernel)
-
-        # cv2.imshow('largest contour',frame)
-        # cv2.waitKey()
-        image, contours, hierarchy = cv2.findContours(
-            frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        # build matrix of
-        data_matrix = np.zeros((len(contours), 8))
-        for i, cnt in enumerate(contours):
+        #cv2.imshow('largest contour',frame)
+        #cv2.waitKey()
+        image, contours, hierarchy = cv2.findContours(frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        data_matrix = np.array([0, 1, 2, 3, 4, 5, 6, 7])
+        for cnt in contours:
             x, y, w, h = cv2.boundingRect(cnt)
             area = cv2.contourArea(cnt)
-            # print(area)
+            print(area)
             hull = cv2.convexHull(cnt)
             hull_area = cv2.contourArea(hull)
             solidity = float(area) / hull_area
@@ -97,8 +95,9 @@ class tracking_red_dots:
                 (self.y_pos_old_1 - y - h / 2)**2
             )
             newrow = [x, y, w, h, area, solidity, distance_0, distance_1]
-            data_matrix[i, :] = newrow
+            data_matrix = np.vstack([data_matrix, newrow])
 
+        data_matrix = data_matrix[1:, :]
         # (TODO: improve comment) filter contours contained in specified area
         data_matrix = data_matrix[
             data_matrix[:, 4] > min(self.area_0, self.area_1) / 2, :]
@@ -214,13 +213,15 @@ class tracking_red_dots:
             self.area_0 = 400 * self.resize
             self.area_1 = 400 * self.resize
 
-        circle = cv2.circle(
-            frame, (self.x_pos_old_1, self.y_pos_old_1), 5, 120, -1)
-        circle = cv2.circle(
-            circle, (self.x_pos_old_0, self.y_pos_old_0), 5, 120, -1)
-        cv2.imshow('largest contour', circle)
-        # print(self.area_0)
-        cv2.waitKey(100)
+
+        circle = cv2.circle(frame, (self.x_pos_old_1, self.y_pos_old_1), 2, 120, -1)
+        circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 2, 120, -1)
+        cv2.imshow('whiteDots', circle)
+        cv2.imshow('largest contour', hsv)
+        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_hsv.png", hsv)
+        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_dots.png", circle)
+        cv2.waitKey(1)
+        #cv2.waitKey()
         if not self.first_done:
             self.first_run_pos = [
                 self.x_pos_old_0, self.y_pos_old_0,

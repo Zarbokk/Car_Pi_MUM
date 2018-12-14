@@ -6,7 +6,7 @@ Created on Sat Dec  1 13:43:52 2018
 """
 import numpy as np
 
-def angleControl(Point_left,Point_right,Midline_x,u0):
+def angleControl(Point_left,Point_right,u0):
     '''
     PARAMETERS
     ----------
@@ -17,17 +17,14 @@ def angleControl(Point_left,Point_right,Midline_x,u0):
     Point_right : nparray 2-Dim
         Point_right[0] x
         Point_right[1] y
-        
-    Midline_x : double 
-        x coordinate of midline of pixelplane
-        
+
     u0 : double
         u0 midline of intrinsic matrix
     '''
     Threshold=u0/3
     MaxSteering=29
-    Midpoint=(Point_right-Point_left)/2+Point_left
-    HorizontalError=(Midline_x-Midpoint[0])/Threshold
+    Midpoint=(Point_right+Point_left)/2
+    HorizontalError=(u0-Midpoint[0])/Threshold
     if np.abs(HorizontalError)<1:
         k=1
         # possible other control schemes
