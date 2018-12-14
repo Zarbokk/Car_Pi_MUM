@@ -36,7 +36,6 @@ def get_nearest_point(cicle,x,y,steps_ahead,N):
         position=position-N
     return position
 
-
 def rotation_2d(x, y, angle):
     x2 = x * np.cos(angle) - np.sin(angle) * y
     y2 = x * np.sin(angle) + np.cos(angle) * y
@@ -55,14 +54,11 @@ def rotationMatrixToEulerAngles(R):
         z = 0
     return np.array([x, y, z])
 
-
 def radToDegree(tmp):
     return tmp / np.pi * 180
 
-
 def degreeToRad(tmp):
     return tmp * np.pi / 180
-
 
 def maxValue(regulate, max_value):
     if regulate > max_value:
@@ -71,7 +67,6 @@ def maxValue(regulate, max_value):
         regulate = -max_value
     return regulate
 
-
 def angularDiff(a, b):
     diff = a - b
     if (diff < -np.pi):
@@ -79,20 +74,21 @@ def angularDiff(a, b):
     if (diff > np.pi):
         diff = diff - np.pi * 2
     return diff
+
 def calibrate(data):
-    x_0_meas = 6.57647705078
-    y_0_meas = 11.2200317383
-    x_1_meas = 552.037841797
-    y_1_meas = 347.904968262
+    x_0_meas = -7.89
+    y_0_meas = 4.91
+    x_1_meas = 548.23
+    y_1_meas = 339.16
     # calibrierung
     # x = 6.57647705078
     # y = 11.2200317383
     # x = 552.037841797
     # y = 347.904968262
-    x_0_real = 6.57647705078
-    y_0_real = 11.2200317383
-    x_1_real = 552.037841797
-    y_1_real = 347.904968262
+    x_0_real = -7.89
+    y_0_real = 4.91
+    x_1_real = 548.23
+    y_1_real = 339.16
     angle_real = np.arctan2((y_0_real - y_1_real), (x_0_real - x_1_real))
     angle_meas = np.arctan2((y_0_meas - y_1_meas), (x_0_meas - x_1_meas))
     difference = angularDiff(angle_real,angle_meas)
@@ -119,7 +115,7 @@ def setPos(odometry_data, data):  # has to be queed every step
 
 
 
-    pos_in_array = get_nearest_point(np.transpose(data), x_position_car, y_position_car, 10, 383)
+    pos_in_array = get_nearest_point(np.transpose(data), x_position_car, y_position_car, 10, 381)
 
     print(pos_in_array)
     print(data[pos_in_array, 0], x_position_car)

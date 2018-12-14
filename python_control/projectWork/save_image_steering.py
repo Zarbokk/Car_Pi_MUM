@@ -8,12 +8,16 @@ from sensor_msgs.msg import Image,CompressedImage
 import numpy as np
 import message_filters
 import rospy
-data_complete=np.array(0)
-first=True
+
+
+n_rows=10
+k=0
+i=0
+data_complete=np.ones((n_rows,410*308+1))
 def callback(image , motor_data):
     #print("im here")
     global data_complete
-    global first
+    global k,i,n_rows
     brige = CvBridge()
 
     try:
@@ -27,12 +31,14 @@ def callback(image , motor_data):
     # (rows, cols, channels) = cv_image.shape
     # if cols > 60 and rows > 60:
     #     cv2.circle(cv_image, (50, 50), 10, 255)
-    if first:
-        data_complete = get_array_image_steering(frame,motor_data.point.z)
-        first=False
-    else:
-        data = get_array_image_steering(frame,motor_data.point.z)
-        data_complete = np.vstack([data_complete, data])
+
+
+    data_complete[k,:] = get_array_image_steering(frame,motor_data.point.z)
+    k=k+1
+    if k==n_rows:
+        k=0
+        np.savetxt("training_NN/train_data/grey_image_data_{0}.csv".format(i), data_complete, delimiter=",", fmt='%.6f')
+        i=i+1
 
 
 
@@ -61,8 +67,7 @@ def listener():
     rospy.init_node('listener', anonymous=True)
     rospy.spin()
     global data_complete
-    print(data_complete,first)
-    np.savetxt("grey_image_data.csv", data_complete, delimiter=",", fmt='%.6f')
+
 
 
 if __name__ == '__main__':

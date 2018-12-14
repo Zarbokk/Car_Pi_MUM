@@ -39,7 +39,7 @@ for i in range(0,x_data.shape[0]):
 
 
 Point_data_used=Point_data_used[0:k,]
-print(Point_data_used.shape)
+print(Point_data_used)
 #plt.figure()
 #plt.title("Grayscale Histogram")
 #plt.xlabel("Bins")
