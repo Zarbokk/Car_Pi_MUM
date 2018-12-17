@@ -4,7 +4,7 @@ import numpy as np
 import time
 import cv2
 batch_size = 32
-epochs = 100
+epochs = 20
 
 
 train_data = np.array(np.loadtxt(
@@ -12,6 +12,8 @@ train_data = np.array(np.loadtxt(
                 "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
                 "rb"),
             delimiter=",", skiprows=1))
+print("hallo")
+time.sleep(10)
 #train_data=np.array(np.loadtxt(open("E:/ML_MODELS/Data_for_AirSim/grey_image_data_augmented.csv", "rb"), delimiter=",", skiprows=1))
 #train_data=np.array(np.loadtxt(open("/Users/tim/OneDrive/Uni/StudienArbeit/Test_data/grey_image_data_augmented_sample.csv", "rb"), delimiter=",", skiprows=1))
 

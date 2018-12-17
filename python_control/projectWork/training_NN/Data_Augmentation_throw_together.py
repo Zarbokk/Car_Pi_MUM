@@ -14,15 +14,15 @@ for file_name in onlyfiles:
             open(
                 "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/" + file_name,
                 "rb"),
-            delimiter=",", skiprows=1))
+            delimiter=","))
         first=False
     else:
-
+        print(aug_data.shape)
         aug_data=np.vstack((aug_data,np.array(np.loadtxt(
             open(
                 "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/" + file_name,
                 "rb"),
-            delimiter=",", skiprows=1))))
+            delimiter=","))))
     print(i)
     i=i+1
 
