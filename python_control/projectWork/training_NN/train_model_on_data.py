@@ -7,11 +7,16 @@ batch_size = 32
 epochs = 20
 
 
+#train_data = np.array(np.loadtxt(
+#            open(
+#                "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
+#                "rb"),
+#            delimiter=","))
 train_data = np.array(np.loadtxt(
             open(
-                "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
+                "F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",
                 "rb"),
-            delimiter=",", skiprows=1))
+            delimiter=","))
 print("hallo")
 time.sleep(10)
 #train_data=np.array(np.loadtxt(open("E:/ML_MODELS/Data_for_AirSim/grey_image_data_augmented.csv", "rb"), delimiter=",", skiprows=1))
@@ -93,4 +98,4 @@ print(y_train)
 #print(model.predict(x_train[10,].reshape(1, img_rows, img_cols, 1)))
 #print(y_train[10])
 
-model.save_weights("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/first_model_64x36.h5")
+#model.save_weights("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/first_model_64x36.h5")
