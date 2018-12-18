@@ -51,9 +51,10 @@ model.add(keras.layers.Dense(1, activation='linear'))
 model.compile(loss=keras.losses.mean_squared_error,
               optimizer=keras.optimizers.Adam(lr=0.001))
 
-model.fit_generator(generate_arrays_from_file("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",),
+#model.fit_generator(generate_arrays_from_file("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",),
+#                    steps_per_epoch=1000, epochs=10)
+model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",),
                     steps_per_epoch=1000, epochs=10)
-
 
 #model.fit(x_train, y_train,
 #          batch_size=batch_size,
