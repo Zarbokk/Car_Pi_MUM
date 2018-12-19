@@ -6,7 +6,7 @@ import cv2
 batch_size = 32
 epochs = 20
 
-def generate_arrays_from_file(path):
+def generate_arrays_from_file(path,printing):
     while 1:
         f = open(path)
         for line in f:
@@ -23,7 +23,8 @@ def generate_arrays_from_file(path):
 
             x_train = x_train.reshape(1, img_rows, img_cols, 1)
 
-
+            if printing:
+                print(y_train)
             x_train = x_train.astype('float32')
             #print(x_train.shape,y_train.shape)
             yield (x_train, y_train)
@@ -49,12 +50,12 @@ model.add(keras.layers.Dropout(0.5))
 model.add(keras.layers.Dense(1, activation='linear'))
 
 model.compile(loss=keras.losses.mean_squared_error,
-              optimizer=keras.optimizers.Adam(lr=0.001))
+              optimizer=keras.optimizers.Adam(lr=0.0001))
 
-#model.fit_generator(generate_arrays_from_file("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",),
-#                    steps_per_epoch=1000, epochs=10)
-model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",),
-                    steps_per_epoch=1000, epochs=10)
+model.fit_generator(generate_arrays_from_file("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",False),
+                    steps_per_epoch=500, epochs=1)
+#model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",),
+#                    steps_per_epoch=10000, epochs=100)
 
 #model.fit(x_train, y_train,
 #          batch_size=batch_size,
@@ -65,7 +66,7 @@ model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car
 
 #score = model.evaluate(x_test, y_test, verbose=0)
 #print('Test loss:', score)
-#print(model.predict(x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)))
+print(model.predict_generator(generate_arrays_from_file("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",True),50))
 #print(y_train)
 
 

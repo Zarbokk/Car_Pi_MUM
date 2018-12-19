@@ -41,3 +41,5 @@ for file_name in onlyfiles:
                 "rb"),
             delimiter=","))
         np.savetxt(f, aug_data, delimiter=",")
+        print(i)
+        i=i+1
