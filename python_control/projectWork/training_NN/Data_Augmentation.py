@@ -53,7 +53,7 @@ for file_name in onlyfiles:
     train_data = np.array(np.loadtxt(
         open("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/" + file_name, "rb"),
         delimiter=","))
-    shift = np.asarray((range(0, 3))) * 8
+    shift = np.asarray((range(0, 10))) * 5
 
     # print(shift.shape[0])
     shift_angle = 0.5
@@ -115,28 +115,34 @@ for file_name in onlyfiles:
     #    cv2.imshow("Image Window", augmented_data[i, 1:].reshape(dimy, dimx))
     #    cv2.waitKey()
     # print("done")
-    scaling = np.asarray((0, 5))
-    # scaling = np.asarray((-15,-10,-5,0,5,10,15))
-    # print(augmented_data.shape[0],scaling.shape[0], 64 * 36 + 1)
-    # print(augmented_data.shape[0]*scaling.shape)
-    contrast_data = np.ones((augmented_data.shape[0] * scaling.shape[0], 64 * 36 + 1))
-    for i in range(0, augmented_data.shape[0]):
-        for k in range(0, scaling.shape[0]):
-            contrast_data[i * scaling.shape[0] + k,] = resize_image(brightness(augmented_data[i,], scaling[k]))
-    # print(augmented_data.shape[0])
+    if False:
+        scaling = np.asarray((-5,0, 5))
+        # scaling = np.asarray((-15,-10,-5,0,5,10,15))
+        # print(augmented_data.shape[0],scaling.shape[0], 64 * 36 + 1)
+        # print(augmented_data.shape[0]*scaling.shape)
+        contrast_data = np.ones((augmented_data.shape[0] * scaling.shape[0], 64 * 36 + 1))
+        for i in range(0, augmented_data.shape[0]):
+            for k in range(0, scaling.shape[0]):
+                contrast_data[i * scaling.shape[0] + k,] = resize_image(brightness(augmented_data[i,], scaling[k]))
+        # print(augmented_data.shape[0])
 
-    # for i in range(0,contrast_data.shape[0]):
-    #    cv2.imshow("Image Window", contrast_data[i,1:].reshape(36, 64))
-    #    cv2.waitKey()
+        # for i in range(0,contrast_data.shape[0]):
+        #    cv2.imshow("Image Window", contrast_data[i,1:].reshape(36, 64))
+        #    cv2.waitKey()
 
-    # data_complete = np.ones((augmented_data.shape[0], 64 * 36 + 1))
-    # print(data_complete.shape)
-    # for i in range(0, augmented_data.shape[0]):
-    #    data_complete[i,] = np.append(augmented_data[i, 0], resize_image(augmented_data[i, 1:]))
-    np.savetxt(
-        "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/augmented_" + file_name,
-        contrast_data,
-        delimiter=",", fmt='%.6f')
+        # data_complete = np.ones((augmented_data.shape[0], 64 * 36 + 1))
+        # print(data_complete.shape)
+        # for i in range(0, augmented_data.shape[0]):
+        #    data_complete[i,] = np.append(augmented_data[i, 0], resize_image(augmented_data[i, 1:]))
+        np.savetxt(
+            "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/augmented_" + file_name,
+            contrast_data,
+            delimiter=",", fmt='%.6f')
+    else:
+        np.savetxt(
+            "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/augmented_" + file_name,
+            augmented_data,
+            delimiter=",", fmt='%.6f')
     print(j)
     j = j + 1
 # row,col=augmented_data.shape

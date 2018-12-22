@@ -12,20 +12,8 @@ import numpy as np
 img_rows, img_cols = 36, 64
 input_shape = (img_rows, img_cols, 1)
 graph = tf.get_default_graph()
-model = keras.Sequential()
-model.add(keras.layers.Conv2D(16, kernel_size=(3, 3),activation='relu',input_shape=input_shape))
-model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
-model.add(keras.layers.Conv2D(32, (3, 3), activation='relu'))
-model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
-model.add(keras.layers.Dropout(0.25))
-model.add(keras.layers.Flatten())
-model.add(keras.layers.Dense(128, activation='relu'))
-model.add(keras.layers.Dropout(0.5))
-model.add(keras.layers.Dense(128, activation='relu'))
-model.add(keras.layers.Dropout(0.5))
-model.add(keras.layers.Dense(1, activation='linear'))
-model.load_weights("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/first_model_64x36.h5")
-
+model= keras.models.load_model(
+    "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/test_model_complete_64x36.h5")
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
 rate = rospy.Rate(25)  # Frequenz der Anwendung
@@ -52,11 +40,11 @@ def callback(image):
     print(rescaled)
     print(rescaled.reshape(1, 36, 64, 1).shape)
     with graph.as_default():
-        print(model.predict((rescaled.reshape(1, 36, 64, 1)).astype('float32')))
+        #print(model.predict((rescaled.reshape(1, 36, 64, 1)).astype('float32')))
         steering_in=model.predict(rescaled.reshape(1, 36, 64, 1))[0][0]
-        print(steering_in)
-        print(steering_in*29)
-        steering_in=steering_in*29*1.5
+        #print(steering_in)
+        #print(steering_in*29)
+        steering_in=steering_in*29
     if steering_in>29:
         steering_in=29
     if steering_in<-29:
@@ -85,21 +73,7 @@ def listener():
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    train_data = np.array(np.loadtxt(
-        open(
-            "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/augmented_grey_image_data_0.csv",
-            "rb"),
-        delimiter=",", skiprows=1))
-    img_rows, img_cols = 36, 64
-    x_train = train_data[0:train_data.shape[0], 1:]
-    y_train = train_data[0:train_data.shape[0], 0]
-    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-    x_train = x_train.astype('float32')
 
-    with graph.as_default():
-        steering_in=model.predict(x_train.reshape(x_train.shape[0], 36, 64, 1))
-        print(steering_in*29)
-        print(y_train*29)
     #video=3
     #rospy.init_node('listener', anonymous=True)
     rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, callback)

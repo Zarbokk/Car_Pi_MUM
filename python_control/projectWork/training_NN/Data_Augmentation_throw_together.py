@@ -35,11 +35,15 @@ i=0
 
 for file_name in onlyfiles:
     with open('/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv', 'a') as f:
-        aug_data = np.array(np.loadtxt(
+        aug_data = np.asarray(np.loadtxt(
             open(
                 "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/" + file_name,
                 "rb"),
             delimiter=","))
+    #print(aug_data.shape)
+        shape=aug_data[0,:]
+        np.random.shuffle(aug_data)
+        #print(shape,aug_data[0,:])
         np.savetxt(f, aug_data, delimiter=",")
         print(i)
         i=i+1

@@ -14,11 +14,11 @@ else:
     N = 0
     sys.stderr.write("No number of lines provided, counting lines in input\n")
     for line in fin:
-        N+=1
+        N += 1
     fin.seek(0)
 
 sys.stderr.write("Shuffling {0} lines...\n".format(N))
-#time.sleep(100)
+time.sleep(100)
 
 
 # random permutation
@@ -36,10 +36,13 @@ files = []
 mx = []
 
 
-print(p)
-time.sleep(100)
+#print(p)
+#print(ridx)
+
 sys.stderr.write("Computing list of temporary files\n")
 for i, n in enumerate(p):
+    # print(i)
+    # print(n)
     pos = bisect.bisect_left(mx, n) - 1
     if pos == -1:
         files.insert(0, [n])
@@ -47,7 +50,9 @@ for i, n in enumerate(p):
     else:
         files[pos].append(n)
         mx[pos] = n
-
+#print(files)
+#print(len(files))
+#time.sleep(100)
 P = len(files)
 sys.stderr.write("Caching to {0} temporary files\n".format(P))
 fps = [tempfile.TemporaryFile(mode="w+") for i in range(P)]
