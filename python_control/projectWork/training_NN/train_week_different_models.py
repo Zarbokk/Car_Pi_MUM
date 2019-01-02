@@ -6,7 +6,7 @@ import cv2
 
 steps_per_epoche = 4158
 number_epochs = 5
-
+steps_per_epoche=10
 n_kernels = (16, 32)
 kernel_size = (3, 4, 5)
 number_fc = (1, 2)
