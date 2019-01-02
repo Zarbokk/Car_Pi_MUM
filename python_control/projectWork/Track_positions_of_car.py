@@ -100,7 +100,7 @@ def talker(odometry_data):
 def dxl_control():
     rospy.Subscriber('odometry_car', Odometry, talker)
     while not rospy.is_shutdown():
-        np.save("Track_Saved.npy", array_to_save)
+        np.save("Track_Saved_b.npy", array_to_save)
 
     #rate.sleep()
     # pos_drive_to()

@@ -37,7 +37,7 @@ def callback(image , motor_data):
     k=k+1
     if k==n_rows:
         k=0
-        np.savetxt("training_NN/train_data/grey_image_data_{0}.csv".format(i), data_complete, delimiter=",", fmt='%.6f')
+        np.savetxt("training_NN/train_data/grey_image_data_backward{0}.csv".format(i), data_complete, delimiter=",", fmt='%.6f')
         i=i+1
 
 
@@ -62,7 +62,7 @@ def listener():
     # run simultaneously.
     image_sub = message_filters.Subscriber('/raspicam_node/image/compressed', CompressedImage)
     car_sub = message_filters.Subscriber('/car_motor_input', PointStamped)
-    ts = message_filters.ApproximateTimeSynchronizer([image_sub, car_sub], 10,1)
+    ts = message_filters.ApproximateTimeSynchronizer([image_sub, car_sub], 10,2)
     ts.registerCallback(callback)
     rospy.init_node('listener', anonymous=True)
     rospy.spin()

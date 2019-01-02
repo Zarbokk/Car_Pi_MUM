@@ -16,12 +16,13 @@ def noisy(image):
     return noisy
 
 
-def resize_image(frame):
+def resize_image(frame):#also crops image
     tmp = frame[1:].reshape(308, 410)
+    tmp=tmp[int(0.2*308.0):308, 0:410]
+
     rescaled = cv2.resize(tmp, (64, 36))
     # print(rescaled.shape)
-    # cv2.imshow("Image Window", rescaled)
-    # cv2.waitKey()
+
     return np.hstack([frame[0], rescaled.flatten()])
 
 
@@ -42,7 +43,7 @@ def brightness(image, brightness_in):
 # noisy(gray_image) adds gaussian noise
 # cv2.warpAffine(gray_image,np.float32([[1,0,30],[0,1,0]]),(256,144)) 30=shift in x richtung 256 und 144 right size
 # v2.resize(img,(64,36)) waere gut fuer NN input
-mypath = "train_data"
+mypath = "train_data/forward/"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
 # print(len(onlyfiles))
@@ -51,9 +52,9 @@ dimy = 308
 j = 0
 for file_name in onlyfiles:
     train_data = np.array(np.loadtxt(
-        open("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/" + file_name, "rb"),
+        open("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/" + mypath + file_name, "rb"),
         delimiter=","))
-    shift = np.asarray((range(0, 10))) * 5
+    shift = np.asarray((range(0, 10))) * 10
 
     # print(shift.shape[0])
     shift_angle = 0.5
@@ -115,15 +116,16 @@ for file_name in onlyfiles:
     #    cv2.imshow("Image Window", augmented_data[i, 1:].reshape(dimy, dimx))
     #    cv2.waitKey()
     # print("done")
-    if False:
-        scaling = np.asarray((-5,0, 5))
-        # scaling = np.asarray((-15,-10,-5,0,5,10,15))
+    if True:
+        # scaling = np.asarray((-5,0, 5))
+        scaling = np.asarray((-15, -10, -5, 0, 5, 10, 15))
         # print(augmented_data.shape[0],scaling.shape[0], 64 * 36 + 1)
         # print(augmented_data.shape[0]*scaling.shape)
         contrast_data = np.ones((augmented_data.shape[0] * scaling.shape[0], 64 * 36 + 1))
         for i in range(0, augmented_data.shape[0]):
             for k in range(0, scaling.shape[0]):
-                contrast_data[i * scaling.shape[0] + k,] = resize_image(brightness(augmented_data[i,], scaling[k]))
+                contrast_data[i * scaling.shape[0] + k,] = resize_image(
+                    brightness(noisy(augmented_data[i,]), scaling[k]))
         # print(augmented_data.shape[0])
 
         # for i in range(0,contrast_data.shape[0]):
@@ -145,11 +147,11 @@ for file_name in onlyfiles:
             delimiter=",", fmt='%.6f')
     print(j)
     j = j + 1
-# row,col=augmented_data.shape
-# for x in range(0,row):
-#     gray_image = augmented_data[x,1:].reshape(144, 256)
-#     print(augmented_data[x,0])
-#     cv2.imshow('image', gray_image)
-#     cv2.waitKey(0)
+    # row, col = contrast_data.shape
+    # for x in range(0, row):
+    #     gray_image = contrast_data[x, 1:].reshape(36, 64)
+    #     print(contrast_data[x, 0])
+    #     cv2.imshow('image', gray_image)
+    #     cv2.waitKey(0)
 
 # np.savetxt("E:/ML_MODELS/Data_for_AirSim/gray_image_data_augmented.csv", augmented_data, delimiter=",",fmt='%.6f')
