@@ -3,8 +3,9 @@ import bisect
 import tempfile
 import random
 import time
-
-fin = open("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv")
+import numpy as np
+filename = "/home/tim/Desktop/augmented_data_FULL.csv"
+fin = open(filename)
 
 s = time.clock()
 
@@ -18,7 +19,7 @@ else:
     fin.seek(0)
 
 sys.stderr.write("Shuffling {0} lines...\n".format(N))
-time.sleep(100)
+#time.sleep(100)
 
 
 # random permutation
@@ -71,8 +72,13 @@ for f in fps:
 
 sys.stderr.write("Writing to the shuffled file\n")
 # write to the final shuffled file
-for i in range(N):
-    print(fps[ridx[p[i]]].readline().strip())
+with open(filename, 'w') as f:
+    for i in range(N):
+        tmp=fps[ridx[p[i]]].readline().strip()
+        #print(tmp[0])
+        f.write(tmp)
+        f.write('\n')
+
 
 e = time.clock()
 
