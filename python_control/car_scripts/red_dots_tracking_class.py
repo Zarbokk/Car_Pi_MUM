@@ -218,8 +218,8 @@ class tracking_red_dots:
         circle = cv2.circle(circle, (self.x_pos_old_0, self.y_pos_old_0), 2, 120, -1)
         cv2.imshow('whiteDots', circle)
         cv2.imshow('largest contour', hsv)
-        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_hsv.png", hsv)
-        cv2.imwrite("/home/tim/Dokumente/poster/crob_image_dots.png", circle)
+        #cv2.imwrite("/home/tim/Dokumente/poster/crob_image_hsv.png", hsv)
+        #cv2.imwrite("/home/tim/Dokumente/poster/crob_image_dots.png", circle)
         cv2.waitKey(1)
         #cv2.waitKey()
         if not self.first_done:

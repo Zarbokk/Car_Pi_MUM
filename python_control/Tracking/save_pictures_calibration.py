@@ -40,7 +40,7 @@ def listener():
     # 1280
     # x960
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    video = cv2.VideoWriter('/home/tim/Dokumente/Video_car_find.avi', fourcc, 20.0, (1280, 960))
+    video = cv2.VideoWriter('/home/tim/Documents/Car_Pi_MUM/python_control/ParameterIdent/calibration_data.avi', fourcc, 20.0, (768, 576))
     #video=3
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, callback, video)

@@ -2,7 +2,7 @@
 from red_dots_tracking_class import tracking_red_dots
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage#Image
 import cv2
 import rospy
 import numpy as np
@@ -74,8 +74,8 @@ def callback(image,tracker):
     try:
         #brige.
         #frame=brige.imgmsg_to_cv2(image, "bgr8")
-        frame = brige.imgmsg_to_cv2(image, "passthrough")
-        #frame = brige.compressed_imgmsg_to_cv2(image, "passthrough")
+        #frame = brige.imgmsg_to_cv2(image, "passthrough")
+        frame = brige.compressed_imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
     global first_run
@@ -91,10 +91,15 @@ def callback(image,tracker):
 
 
         x_0, y_0, x_1, y_1 = tracker.get_red_pos(frame)
-        frame = frame[250:576, 156:612]
-        cv2.imwrite("/home/tim/Dokumente/poster/crob_image.png", frame)
+        #frame = frame[250:576, 156:612]
+        #cv2.imwrite("/home/tim/Dokumente/poster/crob_image.png", frame)
         cv2.imshow("Image Window", frame)
-        cv2.waitKey()
+        cv2.waitKey(1)
+        #print(x_0,y_0,x_1,y_1)
+        f = 592.61
+        de = 70
+        dp = x_1 - x_0
+        print("distance to car:",de * f / dp)
         #circle = cv2.circle(frame, (x_1, y_1), 5, 120, -1)
         #circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
         #cv2.imshow("Image Window", circle)
@@ -166,7 +171,7 @@ def listener():
 
     #video=3
     #rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("/raspicam_node/image", Image, callback, tracker)
+    rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, callback, tracker)
     rospy.spin()
     #video.release()
     cv2.destroyAllWindows()

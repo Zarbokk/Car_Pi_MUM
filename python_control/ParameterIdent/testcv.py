@@ -25,7 +25,7 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
 #images = glob.glob('computervision\\*.jpg')
-images = cv2.VideoCapture("/home/tim/Dokumente/Video_car_find.avi")
+images = cv2.VideoCapture("/home/tim/Documents/Car_Pi_MUM/python_control/ParameterIdent/calibration_data.avi")
 ok, frame = images.read()
 while ok:
     #img = cv2.imread(fname)
