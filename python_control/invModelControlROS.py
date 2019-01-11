@@ -38,12 +38,21 @@ class invModelControl:
 
     def carInput(self,t):
         p,dp,ddp = self.trajectoryGen(t)
-        v,delta = self.invModel(p,dp,ddp)
+        v,delta,psi = self.invModel(p,dp,ddp)
         if delta > self.degToRad(29):
             delta = self.degToRad(29)
         elif delta < self.degToRad(-29):
             delta = self.degToRad(-29)
-        return v, delta
+        return v, delta, psi
+
+    def trajectoryControler(self,error):
+        maxerror = 90
+        maxsteering = 5
+        errorConv = error/maxerror*maxsteering
+        k = 0.5
+        return k*errorConv
+
+        return
 
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
@@ -56,7 +65,7 @@ class invModelControl:
         dpsi = (dxsoll*ddysoll-dysoll*ddxsoll)/(dxsoll**2+dysoll**2)
         v = dxsoll*np.cos(psi)+dysoll*np.sin(psi)
         delta = np.arctan(self.param.L*dpsi/v)
-        return v, delta
+        return v, delta, psi
 
     def trajectoryGen(self,t):
         xsoll = self.Vsoll*t
@@ -82,43 +91,56 @@ class invModelControl:
     # all functions for simulating while overtaking
     ################
 
-    def simulateModel(self,y0,trange,model='complex'):
+    def simulateModel(self,y0,trange,model='complex', control=True):
         if model == 'complex':
             if y0.size < 5:
                 y0=np.array([y0,np.zeros((5-y0.size,))])
-            y = scipy.integrate.odeint(self.carModelOneLane, y0, trange)
+            ode = lambda x,t : self.carModelOneLane(x,t,control=control)
+            y = scipy.integrate.odeint(ode, y0, trange)
         elif model == 'parralel':
             if y0.size < 10:
                 y0=np.array([y0,np.zeros((10-y0.size,))])
-            y = scipy.integrate.odeint(self.carModelParallel, y0, trange)
+                y = scipy.integrate.odeint(self.carModelParallel, y0, trange)
         else:
             y0=y0[:3]
-            y = scipy.integrate.odeint(self.carModelOneLaneSimple, y0, trange)
+            ode = lambda x,t : self.carModelOneLaneSimple(x,t,control=control)
+            y = scipy.integrate.odeint(ode, y0, trange)
         return y
 
-    def carModelOneLaneSimple(self,x,t0):
+    def carModelOneLaneSimple(self,x,t0,control=True):
         Xpos = x[0]
         Ypos = x[1]
         psi = x[2]
-        v, delta = self.carInput(t0)
+        v, delta,psisoll = self.carInput(t0)
+        if control:
+                error = psisoll-psi
+                ddelta = self.trajectoryControler(error)
+                delta = delta+self.degToRad(ddelta)
+
         dx = np.array([np.cos(psi), np.sin(psi), np.tan(delta)/self.param.L])*v
         return dx
 
-    def carModelOneLane(self,x, t0,constInput=False,vc=0,deltac=0):
+    def carModelOneLane(self,x, t0,constInput=False,vc=0,deltac=0,control=True):
         #%% input and constants
         vTol = 1.2*10**(-3) #toleranz for small velocitys to switch to simple model
-        if  constInput:
-            v = vc
-            delta = deltac
-        else:
-            v, delta = self.carInput(t0)
-
         #%% states
         xpos = x[0]
         ypos = x[1]
         betha = x[2]
         psi = x[3]
         phi = x[4] # phi is dummy for dpsi
+        if  constInput:
+            v = vc
+            delta = deltac
+        else:
+            v, delta,psisoll = self.carInput(t0)
+            if control:
+                error = self.radToDeg(psisoll-psi)
+                ddelta = self.trajectoryControler(error)
+                delta = delta+self.degToRad(ddelta)
+
+
+
         if(np.abs(v)>vTol):
             #%% forces (possible to incorporate  more)
             alpha_v = delta-betha-self.param.lv*phi/v
