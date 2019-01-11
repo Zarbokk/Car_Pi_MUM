@@ -43,7 +43,7 @@ class invModelControl:
             delta = self.degToRad(29)
         elif delta < self.degToRad(-29):
             delta = self.degToRad(-29)
-        return v, delta, psi
+        return v, delta, psi, dp[1]
 
     def trajectoryControler(self,error,p=0.5):
         maxerror = 90
@@ -265,18 +265,18 @@ class trajectory:
             specify = self.specifics
 
         T = specify[0]
-        if derivative == 'fist':
-            if t>=0 and t<T:
+        if derivative == 'first':
+            if t>=0 and t<=T:
                 y = 3*self.coeff[0]*t**2+2*self.coeff[1]*t
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<T:
+            if t>=0 and t<=T:
                 y = 6*self.coeff[0]*t+2*self.coeff[1]
             else:
                 y=0
         else:
-            if t>=0 and t<T:
+            if t>=0 and t<=T:
                 y = self.coeff[0]*t**3+self.coeff[1]*t**2
             else:
                 y = self.coeff[0]*T**3+self.coeff[1]*T**2

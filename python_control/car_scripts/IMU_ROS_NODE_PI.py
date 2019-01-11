@@ -32,7 +32,7 @@ def get_x_rotation(x, y, z):
 def talker():
     pub = rospy.Publisher('IMU_acceleration', Imu, queue_size=10)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(100) # 10hz
 
     power_mgmt_1 = 0x6b
     power_mgmt_2 = 0x6c
