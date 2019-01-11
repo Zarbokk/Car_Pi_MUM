@@ -22,7 +22,7 @@ class parameters:
 
 
 class invModelControl:
-    def __init__(self,Vsoll,W,trajectoryType="qubic"):
+    def __init__(self,Vsoll,W,trajectoryType="cubicS"):
         m = 2.26113  # Masse in kg
         Iz = 0.0274  # Trägheitsmoment in kg*m**2
         lv = 0.16812  # abstand von schwerpunkt zu vorderreifen
@@ -51,8 +51,6 @@ class invModelControl:
         errorConv = error/maxerror*maxsteering
         k = 0.5
         return k*errorConv
-
-        return
 
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
@@ -174,14 +172,16 @@ class invModelControl:
         return np.vstack((dx1,dx2))
 
 class trajectory:
-    def __init__(self,specify ,name="qubic",):
+    def __init__(self,specify ,name="cubicS",):
         # Vsoll to T
         Vsoll = specify[0]
-        if name == "qubic":
+        if name == "parabolic":
             T = 4*specify[1]/Vsoll
-        elif name == "qubicS":
+        elif name == "quadS":
             T = 2*specify[1]/Vsoll
         elif name == "sShape":
+            T = 2*specify[1]/Vsoll
+        elif name == "cubicS":
             T = 2*specify[1]/Vsoll
         self.specifics = (T,specify[1])
         self.name = name
@@ -192,7 +192,7 @@ class trajectory:
             specify = self.specifics
         if not name:
             name = self.name
-        if name == "qubic":
+        if name == "parabolic":
             T=specify[0]
             W=specify[1]
             A = np.array([(T**2)/9, -1, -T/3, -(T**2)/9, 0, 0, 0,
@@ -205,7 +205,7 @@ class trajectory:
             b = np.zeros(A.shape[0])
             b[2] = W
             coeff = np.linalg.solve(A, b)
-        elif name == "qubicS":
+        elif name == "quadS":
             T=specify[0]
             W=specify[1]
             A = np.array([(T**2)/4, -1, -T/2, -(T**2)/4,
@@ -222,17 +222,34 @@ class trajectory:
             a3 = -2*W/T**3
             a2 = 3*W/T**2
             coeff = np.array([a3,a2])
+
+        elif name == "cubicS":
+            T = specify[0]
+            T1 = T/2
+            W = specify[1]
+            A = np.array([T1**2, T1**3, -1, -T1,-T1**2,-T1**3,
+                            T1*2, 3*T1**2, 0, -1,-2*T1,-3*T1**2,
+                            2, 6*T1, 0, 0,-2,-6*T1,
+                            0, 0, 1, T, T**2, T**3,
+                            0, 0, 0, 1, 2*T, 3*T**2,
+                            0, 0, 0, 0, 2, 6*T]).reshape(6, 6)
+
+            b = np.zeros(A.shape[0])
+            b[3] = W
+            coeff = np.linalg.solve(A, b)
         return coeff
 
     def generateSpline(self,t,derivative='zero'):
-        if self.name == "qubic":
+        if self.name == "parabolic":
             return self._parabolaSpline(t, derivative=derivative)
-        elif self.name == "qubicS":
-            return self._qubicsSpline(t, derivative=derivative)
+        elif self.name == "quadS":
+            return self._quadsSpline(t, derivative=derivative)
         elif self.name == "sShape":
-            return self._sSpline(t,derivative=derivative)
+            return self._sShape(t,derivative=derivative)
+        elif self.name == "cubicS":
+            return self._cubicsSpline(t,derivative=derivative)
 
-    def _qubicsSpline(self, t, specify = None, derivative='zero'):
+    def _quadsSpline(self, t, specify = None, derivative='zero'):
         if not specify:
             specify = self.specifics
 
@@ -261,27 +278,56 @@ class trajectory:
         return y
 
 
-    def _sSpline(self, t, specify = None, derivative='zero'):
+    def _cubicsSpline(self, t, specify = None, derivative='zero'):
         if not specify:
             specify = self.specifics
 
         T = specify[0]
-        if derivative == 'fist':
-            if t>=0 and t<T:
+        if derivative == 'first':
+            if t>=0 and t<T/2:
+                y = 2*self.coeff[0]*t+3*self.coeff[1]*t**2
+            elif t>=T/2 and t<=T:
+                y = self.coeff[3]+2*self.coeff[4]*t+3*self.coeff[5]*t**2
+            else:
+                y=0
+        elif derivative == 'second':
+            if t>=0 and t<T/2:
+                y = 2*self.coeff[0]+6*self.coeff[1]*t
+            elif t>=T/2 and t<=T:
+                y = 2*self.coeff[4]+6*self.coeff[5]*t
+            else:
+                y=0
+        else:
+            if t>=0 and t<T/2:
+                y = self.coeff[0]*t**2+self.coeff[1]*t**3
+            elif t>=T/2 and t<=T:
+                y = self.coeff[2]+self.coeff[3]*t+self.coeff[4]*t**2+self.coeff[5]*t**3
+            else:
+                y = self.coeff[2]+self.coeff[3]*T+self.coeff[4]*T**2+self.coeff[5]*T**3
+        return y
+
+    def _sShape(self, t,specify = None, derivative="zero"):
+        if not specify:
+            specify = self.specifics
+        T = specify[0]
+
+        if derivative == 'first':
+            if t>=0 and t<=T:
                 y = 3*self.coeff[0]*t**2+2*self.coeff[1]*t
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<T:
+            if t>=0 and t<=T:
                 y = 6*self.coeff[0]*t+2*self.coeff[1]
             else:
-                y=0
+                y = 0
         else:
-            if t>=0 and t<T:
+            if t>=0 and t<=T:
                 y = self.coeff[0]*t**3+self.coeff[1]*t**2
             else:
                 y = self.coeff[0]*T**3+self.coeff[1]*T**2
         return y
+
     def _parabolaSpline(self, t, specify=None, derivative='zero'):
         if not specify:
             specify = self.specifics
