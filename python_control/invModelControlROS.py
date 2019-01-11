@@ -43,15 +43,19 @@ class invModelControl:
             delta = self.degToRad(29)
         elif delta < self.degToRad(-29):
             delta = self.degToRad(-29)
-        return v, delta, psi
+        return v, delta, psi, dp[1]
 
-    def trajectoryControler(self,error):
+    def trajectoryControler(self,error,p=0.5):
         maxerror = 90
         maxsteering = 5
         errorConv = error/maxerror*maxsteering
-        k = 0.5
-        return k*errorConv
+        return p*errorConv
 
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> 87ee7a78c2a64ee5d3abcce6d67c5a1bb4f317d0
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
         # p is the desired trajectory dp ddp are derivative w.r.t. time
@@ -284,6 +288,7 @@ class trajectory:
 
         T = specify[0]
         if derivative == 'first':
+<<<<<<< HEAD
             if t>=0 and t<T/2:
                 y = 2*self.coeff[0]*t+3*self.coeff[1]*t**2
             elif t>=T/2 and t<=T:
@@ -312,6 +317,8 @@ class trajectory:
         T = specify[0]
 
         if derivative == 'first':
+=======
+>>>>>>> 87ee7a78c2a64ee5d3abcce6d67c5a1bb4f317d0
             if t>=0 and t<=T:
                 y = 3*self.coeff[0]*t**2+2*self.coeff[1]*t
             else:
