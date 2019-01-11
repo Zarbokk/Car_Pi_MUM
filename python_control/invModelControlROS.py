@@ -45,14 +45,13 @@ class invModelControl:
             delta = self.degToRad(-29)
         return v, delta, psi
 
-    def trajectoryControler(self,error):
+    def trajectoryControler(self,error,p=0.5):
         maxerror = 90
         maxsteering = 5
         errorConv = error/maxerror*maxsteering
-        k = 0.5
-        return k*errorConv
+        return p*errorConv
 
-        return
+
 
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
