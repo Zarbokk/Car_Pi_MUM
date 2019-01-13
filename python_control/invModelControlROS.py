@@ -19,6 +19,11 @@ class parameters:
         self.EG = EG # eigenlenkgradient aus parameterident
         self.ks = (lv-lh)/EG/self.L*m  # Schräglaaufsteiigkeit vorne und hinten
 
+class virtualCarContainer:
+    def __init__(self,x,v,delta):
+        self.state = x
+        self.v = v
+        self.delta = delta
 
 
 class invModelControl:
@@ -31,31 +36,35 @@ class invModelControl:
         self.param=parameters(m, Iz, lv, lh, EG)
         self.Vsoll = Vsoll
         self.trajectory = trajectory((Vsoll,W),name=trajectoryType)
+        self.overtake = False
+        self.T0 = None
+        self.accSoll = 0.5
+        self.lastKnownFrontCar = virtualCarContainer(np.array([0, W, 0, 0, 0]),Vsoll,0)
 
     ################
-    # first all functions for the openloop changelane maneuver
+    # first all functions for the changelane maneuver
     ################
 
-    def carInput(self,t):
-        p,dp,ddp = self.trajectoryGen(t)
-        v,delta,psi = self.invModel(p,dp,ddp)
-        if delta > self.degToRad(29):
-            delta = self.degToRad(29)
-        elif delta < self.degToRad(-29):
-            delta = self.degToRad(-29)
-        return v, delta, psi, dp[1]
+    def carInput(self,t,phase='changeLane'):
+        if phase == 'changeLane':
+            p,dp,ddp = self.trajectoryGen(t)
+            v,delta,psi = self.invModel(p,dp,ddp)
+            if delta > self.degToRad(29):
+                delta = self.degToRad(29)
+            elif delta < self.degToRad(-29):
+                delta = self.degToRad(-29)
+        elif phase == 'straightLine':
+            v = self.Vsoll+self.accSoll*t
+            delta = 0
+            psi = 0
+        return v, delta, psi
 
-    def trajectoryControler(self,error,p=0.5):
-        maxerror = 90
-        maxsteering = 5
+    def trajectoryControler(self,error,p=10):
+        maxerror = 30
+        maxsteering = 10
         errorConv = error/maxerror*maxsteering
         return p*errorConv
 
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 87ee7a78c2a64ee5d3abcce6d67c5a1bb4f317d0
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
         # p is the desired trajectory dp ddp are derivative w.r.t. time
@@ -85,7 +94,6 @@ class invModelControl:
     def radToDeg(self,x):
         return x/np.pi*180
 
-
     def degToRad(self,x):
         return x*np.pi/180
 
@@ -93,36 +101,71 @@ class invModelControl:
     # all functions for simulating while overtaking
     ################
 
-    def simulateModel(self,y0,trange,model='complex', control=True):
+    def simulateModel(self,y0,trange,model='complex', **kwargs):
         if model == 'complex':
             if y0.size < 5:
-                y0=np.array([y0,np.zeros((5-y0.size,))])
-            ode = lambda x,t : self.carModelOneLane(x,t,control=control)
+               y0=np.concatenate((y0,np.zeros((5-y0.size))),axis=None)
+            try:
+                ode = lambda x,t : self.carModelOneLane(x,t,**kwargs)
+            except TypeError as error:
+               print(error)
             y = scipy.integrate.odeint(ode, y0, trange)
-        elif model == 'parralel':
+        elif model == 'parallel':
             if y0.size < 10:
-                y0=np.array([y0,np.zeros((10-y0.size,))])
-                y = scipy.integrate.odeint(self.carModelParallel, y0, trange)
-        else:
-            y0=y0[:3]
-            ode = lambda x,t : self.carModelOneLaneSimple(x,t,control=control)
+                y0=np.concatenate((y0,np.zeros((10-y0.size,))),axis=None)
+            try:
+                ode = lambda x,t : self.carModelParallel(x,t,**kwargs)
+            except TypeError as error:
+                print(error)
+
             y = scipy.integrate.odeint(ode, y0, trange)
+        elif model == 'full':
+            if y0.size < 5:
+                y0=np.concatenate((y0,np.zeros((5-y0.size,))),axis=None)
+            try:
+                ode = lambda x,t : self.carModelFull(x,t)
+            except TypeError as error:
+                print(error)
+
+            y = scipy.integrate.odeint(ode, y0, trange)
+        elif model == 'simple':
+            y0=y0[:3]
+            try:
+                ode = lambda x,t : self.carModelOneLaneSimple(x,t,**kwargs)
+            except TypeError as error:
+                print(error)
+            y = scipy.integrate.odeint(ode, y0, trange)
+        else:
+             raise NameError('given model type does not match any implemented one')
         return y
 
-    def carModelOneLaneSimple(self,x,t0,control=True):
+    def carModelOneLaneSimple(self,x,t0,control=True, constInput=False,uc=[1,0]):
+#        if 'control' in kwargs.keys():
+#            control = kwargs['control']
+#        else:
+#            control = False
         Xpos = x[0]
         Ypos = x[1]
         psi = x[2]
-        v, delta,psisoll = self.carInput(t0)
-        if control:
-                error = psisoll-psi
+        if  constInput:
+            v = uc[0]
+            delta = uc[1]
+        else:
+            v, delta,psisoll = self.carInput(t0)
+            if control:
+                error = self.radToDeg(psisoll-psi)
                 ddelta = self.trajectoryControler(error)
                 delta = delta+self.degToRad(ddelta)
 
         dx = np.array([np.cos(psi), np.sin(psi), np.tan(delta)/self.param.L])*v
         return dx
 
-    def carModelOneLane(self,x, t0,constInput=False,vc=0,deltac=0,control=True):
+    def carModelOneLane(self,x, t0,control=True, constInput=False,uc=[1,0]):
+#        if 'constInput' in kwargs.keys():
+#            constInput = kwargs['constInput']
+#            if 'uc' in
+#        else:
+#            constInput = False
         #%% input and constants
         vTol = 1.2*10**(-3) #toleranz for small velocitys to switch to simple model
         #%% states
@@ -132,8 +175,8 @@ class invModelControl:
         psi = x[3]
         phi = x[4] # phi is dummy for dpsi
         if  constInput:
-            v = vc
-            delta = deltac
+            v = uc[0]
+            delta = uc[1]
         else:
             v, delta,psisoll = self.carInput(t0)
             if control:
@@ -141,9 +184,10 @@ class invModelControl:
                 ddelta = self.trajectoryControler(error)
                 delta = delta+self.degToRad(ddelta)
 
-
-
-        if(np.abs(v)>vTol):
+        if v == 0:
+            v=vTol
+        v = np.sign(v)*np.max([np.abs(v),vTol])
+        if(np.abs(v)>=vTol):
             #%% forces (possible to incorporate  more)
             alpha_v = delta-betha-self.param.lv*phi/v
             alpha_h = self.param.lh*phi/v-betha
@@ -167,18 +211,53 @@ class invModelControl:
             dphi = 0
         return [dxpos, dypos, dbetha, dpsi, dphi]
 
-    def carModelParallel(self,xa,t0):
-        n=len(xa)
-        x1=xa[:n/2] # states of first car
-        x2=xa[n/2:] # states of second car
-        dx1 = self.carModelOneLane(x1,t0)
-        dx2 = self.carModelOneLane(x2,t0,constInput = True,vc = 5,deltac = 0)
-        return np.vstack((dx1,dx2))
+    def carModelParallel(self,xa,t0,control=True,uc=[1,0]):
+        n=xa.size//2
+        dx1 = self.carModelOneLane(xa[:n],t0,control=control)
+        dx2 = self.carModelOneLane(xa[n:],t0,constInput=True,uc=uc)
+        return np.concatenate((dx1,dx2),axis=None)
+
+    def carModelFull(self,x,t0):
+        psi = x[3]
+        #%% externaly call carInput depending on what the internal simulation says
+        if not self.T0: # T0 is only initialized once as None
+            self.overtake = self.tryToOvertake(self.lastKnownFrontCar,x,t0)
+            if self.overtake:
+                self.T0 = t0 # save overtake starting time
+                print(t0)
+        if self.overtake == True:
+            vc,deltac,psisoll =  self.carInput(t0-self.T0) # get carInout due to trajectory change relative to start overtake T0
+        else:
+            vc, deltac, psisoll = self.carInput(t0,phase='straightLine')
+        error = self.radToDeg(psisoll-psi)
+        ddelta = self.trajectoryControler(error)
+        deltac = deltac+self.degToRad(ddelta)
+        dx = self.carModelOneLane(x, t0,control=False,constInput=True,uc=[vc,deltac])
+        return dx
+
+    def tryToOvertake(self,lastKnownFrontCar,xBackCar,t0):
+        # first simulate the front car alone up to actual time t0 (try later if this can be safed persistently)
+        n=xBackCar.size
+        if t0 > 0:
+            t0Range = np.arange(0,t0,0.1)
+            xFrontCar = self.simulateModel(lastKnownFrontCar.state, t0Range, model='complex', constInput=True, uc=[lastKnownFrontCar.v,lastKnownFrontCar.delta])
+        else:
+            xFrontCar = lastKnownFrontCar.state
+        # then simulate both cars paralel for the time horizon of a lane change
+        T = self.trajectory.specifics[0] # Time from trajectory
+        TRange = np.arange(0,T,0.1)
+        xAugmented = np.concatenate((xBackCar, xFrontCar),axis=None)
+        xBothCars = self.simulateModel(xAugmented,TRange,model='parallel',control=True, uc=[lastKnownFrontCar.v,lastKnownFrontCar.delta])
+        xPosBackCar = xBothCars[-1,0]
+        xPosFrontCar = xBothCars[-1,n]
+        return xPosBackCar-self.param.lh > xPosFrontCar
+
 
 class trajectory:
     def __init__(self,specify ,name="cubicS",):
         # Vsoll to T
         Vsoll = specify[0]
+
         if name == "parabolic":
             T = 4*specify[1]/Vsoll
         elif name == "quadS":
@@ -187,6 +266,8 @@ class trajectory:
             T = 2*specify[1]/Vsoll
         elif name == "cubicS":
             T = 2*specify[1]/Vsoll
+        else:
+            raise NameError('given trajecorty does not match any implemented one')
         self.specifics = (T,specify[1])
         self.name = name
         self.coeff = self.calcCoeff()
@@ -241,6 +322,8 @@ class trajectory:
             b = np.zeros(A.shape[0])
             b[3] = W
             coeff = np.linalg.solve(A, b)
+        else:
+            raise NameError('given trajecorty does not match any implemented one')
         return coeff
 
     def generateSpline(self,t,derivative='zero'):
@@ -252,13 +335,22 @@ class trajectory:
             return self._sShape(t,derivative=derivative)
         elif self.name == "cubicS":
             return self._cubicsSpline(t,derivative=derivative)
+        else:
+            raise NameError('given trajecorty does not match any implemented one')
 
     def _quadsSpline(self, t, specify = None, derivative='zero'):
         if not specify:
             specify = self.specifics
 
         T = specify[0]
-        if derivative == 'first':
+        if derivative == 'zero':
+            if t>=0 and t<T/2:
+                y = self.coeff[0]*t**2
+            elif t>=T/2 and t<T:
+                y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
+            else:
+                y= self.coeff[1]+self.coeff[2]*T+self.coeff[3]*T**2
+        elif derivative == 'first':
             if t>=0 and t<T/2:
                 y = 2*self.coeff[0]*t
             elif t>=T/2 and t<T:
@@ -273,12 +365,7 @@ class trajectory:
             else:
                 y=0
         else:
-            if t>=0 and t<T/2:
-                y = self.coeff[0]*t**2
-            elif t>=T/2 and t<T:
-                y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
-            else:
-                y= self.coeff[1]+self.coeff[2]*T+self.coeff[3]*T**2
+            raise NameError('requested derivative does not match any implemented one')
         return y
 
 
@@ -287,8 +374,14 @@ class trajectory:
             specify = self.specifics
 
         T = specify[0]
-        if derivative == 'first':
-<<<<<<< HEAD
+        if derivative == 'zero':
+            if t>=0 and t<T/2:
+                y = self.coeff[0]*t**2+self.coeff[1]*t**3
+            elif t>=T/2 and t<=T:
+                y = self.coeff[2]+self.coeff[3]*t+self.coeff[4]*t**2+self.coeff[5]*t**3
+            else:
+                y = self.coeff[2]+self.coeff[3]*T+self.coeff[4]*T**2+self.coeff[5]*T**3
+        elif derivative == 'first':
             if t>=0 and t<T/2:
                 y = 2*self.coeff[0]*t+3*self.coeff[1]*t**2
             elif t>=T/2 and t<=T:
@@ -303,12 +396,7 @@ class trajectory:
             else:
                 y=0
         else:
-            if t>=0 and t<T/2:
-                y = self.coeff[0]*t**2+self.coeff[1]*t**3
-            elif t>=T/2 and t<=T:
-                y = self.coeff[2]+self.coeff[3]*t+self.coeff[4]*t**2+self.coeff[5]*t**3
-            else:
-                y = self.coeff[2]+self.coeff[3]*T+self.coeff[4]*T**2+self.coeff[5]*T**3
+            raise NameError('requested derivative does not match any implemented one')
         return y
 
     def _sShape(self, t,specify = None, derivative="zero"):
@@ -316,9 +404,12 @@ class trajectory:
             specify = self.specifics
         T = specify[0]
 
-        if derivative == 'first':
-=======
->>>>>>> 87ee7a78c2a64ee5d3abcce6d67c5a1bb4f317d0
+        if derivative == 'zero':
+            if t>=0 and t<=T:
+                y = self.coeff[0]*t**3+self.coeff[1]*t**2
+            else:
+                y = self.coeff[0]*T**3+self.coeff[1]*T**2
+        elif derivative == 'first':
             if t>=0 and t<=T:
                 y = 3*self.coeff[0]*t**2+2*self.coeff[1]*t
             else:
@@ -329,10 +420,7 @@ class trajectory:
             else:
                 y = 0
         else:
-            if t>=0 and t<=T:
-                y = self.coeff[0]*t**3+self.coeff[1]*t**2
-            else:
-                y = self.coeff[0]*T**3+self.coeff[1]*T**2
+           raise NameError('requested derivative does not match any implemented one')
         return y
 
     def _parabolaSpline(self, t, specify=None, derivative='zero'):
@@ -340,7 +428,16 @@ class trajectory:
             specify = self.specifics
 
         T = specify[0]
-        if derivative == 'first':
+        if derivative == 'zero':
+            if t>=0 and t<T/3:
+                y = self.coeff[0]*t**2
+            elif t>=T/3 and t<2*T/3:
+                y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
+            elif t>=2*T/3 and t<=T:
+                y = self.coeff[4]+self.coeff[5]*t+self.coeff[6]*t**2
+            else:
+                y=0
+        elif derivative == 'first':
             if t>=0 and t<T/3:
                 y = 2*self.coeff[0]*t
             elif t>=T/3 and t<2*T/3:
@@ -359,14 +456,7 @@ class trajectory:
             else:
                 y=0
         else:
-            if t>=0 and t<T/3:
-                y = self.coeff[0]*t**2
-            elif t>=T/3 and t<2*T/3:
-                y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
-            elif t>=2*T/3 and t<=T:
-                y = self.coeff[4]+self.coeff[5]*t+self.coeff[6]*t**2
-            else:
-                y=0
+            raise NameError('requested derivative does not match any implemented one')
         return y
 
 
