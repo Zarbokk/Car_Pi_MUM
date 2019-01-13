@@ -382,6 +382,7 @@ class trajectory:
             else:
                 y = self.coeff[2]+self.coeff[3]*T+self.coeff[4]*T**2+self.coeff[5]*T**3
         elif derivative == 'first':
+
             if t>=0 and t<T/2:
                 y = 2*self.coeff[0]*t+3*self.coeff[1]*t**2
             elif t>=T/2 and t<=T:
