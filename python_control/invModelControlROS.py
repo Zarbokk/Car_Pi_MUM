@@ -8,6 +8,8 @@ Created on Sat Jan  5 15:00:27 2019
 import numpy as np
 # import calcSpline
 import scipy.integrate
+ODEsolver = scipy.integrate.odeint
+
 
 class parameters:
     def __init__(self,m, Iz, lv, lh, EG):
@@ -27,7 +29,8 @@ class virtualCarContainer:
 
 
 class invModelControl:
-    def __init__(self,Vsoll,W,trajectoryType="cubicS"):
+    def __init__(self,Vsoll,accSoll,W,trajectoryType="cubicS"):
+        self.solveroptions={'hmax':0.1}
         m = 2.26113  # Masse in kg
         Iz = 0.0274  # Trägheitsmoment in kg*m**2
         lv = 0.16812  # abstand von schwerpunkt zu vorderreifen
@@ -38,7 +41,7 @@ class invModelControl:
         self.trajectory = trajectory((Vsoll,W),name=trajectoryType)
         self.overtake = False
         self.T0 = None
-        self.accSoll = 0.5
+        self.accSoll = accSoll
         self.lastKnownFrontCar = virtualCarContainer(np.array([0, W, 0, 0, 0]),Vsoll,0)
 
     ################
@@ -58,6 +61,15 @@ class invModelControl:
             delta = 0
             psi = 0
         return v, delta, psi
+
+#    def completeManeuver(self,t):
+#        T=self.trajectory.specifics[0]
+#        if t>=0 and t<=T:
+#            v,delta,psi = self.carInput(t,phase='changeLane')
+#        elif t>T:
+#            overtake = self.tryToOvertake()
+#            if overtake :
+
 
     def trajectoryControler(self,error,p=10):
         maxerror = 30
@@ -109,7 +121,7 @@ class invModelControl:
                 ode = lambda x,t : self.carModelOneLane(x,t,**kwargs)
             except TypeError as error:
                print(error)
-            y = scipy.integrate.odeint(ode, y0, trange)
+            y = ODEsolver(ode, y0, trange,**self.solveroptions)
         elif model == 'parallel':
             if y0.size < 10:
                 y0=np.concatenate((y0,np.zeros((10-y0.size,))),axis=None)
@@ -118,7 +130,17 @@ class invModelControl:
             except TypeError as error:
                 print(error)
 
-            y = scipy.integrate.odeint(ode, y0, trange)
+            y = ODEsolver(ode, y0, trange,**self.solveroptions)
+        elif model == 'discrete':
+            if y0.size < 10:
+                y0=np.concatenate((y0,np.zeros((10-y0.size,))),axis=None)
+            try:
+                ode = lambda x,t : self.carModelDiscrete(x,t,**kwargs)
+            except TypeError as error:
+                print(error)
+            step = trange/5
+            t = np.arange(0,trange+step,step)
+            y = ODEsolver(ode, y0, t)
         elif model == 'full':
             if y0.size < 5:
                 y0=np.concatenate((y0,np.zeros((5-y0.size,))),axis=None)
@@ -127,14 +149,14 @@ class invModelControl:
             except TypeError as error:
                 print(error)
 
-            y = scipy.integrate.odeint(ode, y0, trange)
+            y = ODEsolver(ode, y0, trange,**self.solveroptions)
         elif model == 'simple':
             y0=y0[:3]
             try:
                 ode = lambda x,t : self.carModelOneLaneSimple(x,t,**kwargs)
             except TypeError as error:
                 print(error)
-            y = scipy.integrate.odeint(ode, y0, trange)
+            y = ODEsolver(ode, y0, trange,**self.solveroptions)
         else:
              raise NameError('given model type does not match any implemented one')
         return y
@@ -211,9 +233,49 @@ class invModelControl:
             dphi = 0
         return [dxpos, dypos, dbetha, dpsi, dphi]
 
+    def carModelDiscrete(self,xa,t0,ub,uf):
+        n=xa.size//2
+        dx1 = self.carModelOneLane(xa[:n],t0,constInput=True, uc=ub)
+        dx2 = self.carModelOneLane(xa[n:],t0,constInput=True,uc=uf)
+        return np.concatenate((dx1,dx2),axis=None)
+
+
     def carModelParallel(self,xa,t0,control=True,uc=[1,0]):
         n=xa.size//2
-        dx1 = self.carModelOneLane(xa[:n],t0,control=control)
+        psiFollow = xa[3]
+        xFollow = xa[0]
+        xFront = xa[5]
+        if t0>=0 and t0<=self.trajectory.specifics.T:
+            v,delta,psiSoll = self.carInput(t0,phase='changeLane')
+
+        else:
+            if xFollow-self.param.lh >= xFront:
+                if not self.T0: #chaneLane Back started
+                    self.T0=t0
+                    print('T0')
+                    print(self.T0)
+                    W = self.trajectory.specifics.W
+                    self.trajectory.setSpecifics([self.Vsoll,-W])
+
+                if t0-self.T0 >0:
+                    print(t0-self.T0)
+                if (t0-self.T0)>=0 and (t0-self.T0)<=self.trajectory.specifics.T:
+                    print('change back')
+                    v,delta,psiSoll = self.carInput(t0-self.T0,phase='changeLane')
+
+                else:
+                    v,delta,psiSoll = uc[0],uc[1],0
+
+            else:
+                v,delta,psiSoll = self.carInput(t0-self.trajectory.specifics.T,phase='straightLine')
+                self.trajectory.updateVsoll(v)
+
+        if control:
+            error = self.radToDeg(psiSoll-psiFollow)
+            ddelta = self.trajectoryControler(error)
+            delta = delta+self.degToRad(ddelta)
+
+        dx1 = self.carModelOneLane(xa[:n],t0,constInput=True, uc=[v,delta])
         dx2 = self.carModelOneLane(xa[n:],t0,constInput=True,uc=uc)
         return np.concatenate((dx1,dx2),axis=None)
 
@@ -244,7 +306,7 @@ class invModelControl:
         else:
             xFrontCar = lastKnownFrontCar.state
         # then simulate both cars paralel for the time horizon of a lane change
-        T = self.trajectory.specifics[0] # Time from trajectory
+        T = self.trajectory.specifics.T # Time from trajectory
         TRange = np.arange(0,T,0.1)
         xAugmented = np.concatenate((xBackCar, xFrontCar),axis=None)
         xBothCars = self.simulateModel(xAugmented,TRange,model='parallel',control=True, uc=[lastKnownFrontCar.v,lastKnownFrontCar.delta])
@@ -252,24 +314,58 @@ class invModelControl:
         xPosFrontCar = xBothCars[-1,n]
         return xPosBackCar-self.param.lh > xPosFrontCar
 
+class specifics:
+    def setVsoll(self,Vsoll):
+        self.Vsoll = Vsoll
+
+    def setT(self,T):
+        self.T = T
+
+    def setW(self,W):
+        self.W=W
 
 class trajectory:
     def __init__(self,specify ,name="cubicS",):
         # Vsoll to T
-        Vsoll = specify[0]
+        self.setSpecifics(specify,name)
 
-        if name == "parabolic":
-            T = 4*specify[1]/Vsoll
-        elif name == "quadS":
-            T = 2*specify[1]/Vsoll
-        elif name == "sShape":
-            T = 1.5*specify[1]/Vsoll
-        elif name == "cubicS":
-            T = 2*specify[1]/Vsoll
+    def VsollToT(self,Vsoll,W):
+
+        if self.name == "parabolic":
+            T = 4*W/Vsoll
+        elif self.name == "quadS":
+            T = 2*W/Vsoll
+        elif self.name == "sShape":
+            T = 2*W/Vsoll
+        elif self.name == "cubicS":
+            T = 2*W/Vsoll
         else:
             raise NameError('given trajecorty does not match any implemented one')
-        self.specifics = (T,specify[1])
-        self.name = name
+        return T
+
+    def updateW(self,W):
+        self.specifics.setW(W)
+        T=self.VsollToT(self.specifics.Vsoll,self.specifics.W)
+        self.specifics.setT(T)
+        self.coeff = self.calcCoeff()
+
+
+    def updateVsoll(self,Vsoll):
+        self.specifics.setVsoll(Vsoll)
+        T = self.VsollToT(self.specifics.Vsoll,self.specifics.W)
+        self.specifics.setT(T)
+        self.coeff = self.calcCoeff()
+
+    def setSpecifics(self,specify,name=None):
+        if not name:
+            name = self.name
+        else:
+            self.name = name
+        self.specifics = specifics()
+        self.specifics.setVsoll(specify[0])
+        self.specifics.setW(specify[1])
+        T = self.VsollToT(self.specifics.Vsoll,self.specifics.W)
+        self.specifics.setT(T)
         self.coeff = self.calcCoeff()
 
     def calcCoeff(self,specify=None, name = None):
@@ -278,49 +374,41 @@ class trajectory:
         if not name:
             name = self.name
         if name == "parabolic":
-            T=specify[0]
-            W=specify[1]
-            A = np.array([(T**2)/9, -1, -T/3, -(T**2)/9, 0, 0, 0,
-                            2*T/3, 0, -1, -2*T/3, 0, 0, 0,
-                            0, 1, T/2, (T**2)/4, 0, 0, 0,
-                            0, 0, 1, T, 0, 0, 0,
-                            0, 1, 2*T/3, 4*(T**2)/9, -1, -2*T/3, -4*(T**2)/9,
-                            0, 0, 1, 4*T/3, 0, -1, -4*T/3,
-                            0, 0, 0, 0, 1, T, T**2]).reshape(7, 7) # 0, 0, 0, 0, 0, 1, 2*T
+            A = np.array([(specify.T**2)/9, -1, -specify.T/3, -(specify.T**2)/9, 0, 0, 0,
+                            2*specify.T/3, 0, -1, -2*specify.T/3, 0, 0, 0,
+                            0, 1, specify.T/2, (specify.T**2)/4, 0, 0, 0,
+                            0, 0, 1, specify.T, 0, 0, 0,
+                            0, 1, 2*specify.T/3, 4*(specify.T**2)/9, -1, -2*specify.T/3, -4*(specify.T**2)/9,
+                            0, 0, 1, 4*specify.T/3, 0, -1, -4*specify.T/3,
+                            0, 0, 0, 0, 1, specify.T, specify.T**2]).reshape(7, 7) # 0, 0, 0, 0, 0, 1, 2*T
             b = np.zeros(A.shape[0])
-            b[2] = W
+            b[2] = specify.W
             coeff = np.linalg.solve(A, b)
         elif name == "quadS":
-            T=specify[0]
-            W=specify[1]
-            A = np.array([(T**2)/4, -1, -T/2, -(T**2)/4,
-                            2*T/2, 0, -1, -2*T/2,
-                            0, 1, T, (T**2),
-                            0, 0, 1, 2*T,]).reshape(4, 4) # 0, 0, 0, 0, 0, 1, 2*T
+            A = np.array([(specify.T**2)/4, -1, -specify.T/2, -(specify.T**2)/4,
+                            2*specify.T/2, 0, -1, -2*specify.T/2,
+                            0, 1, specify.T, (specify.T**2),
+                            0, 0, 1, 2*specify.T,]).reshape(4, 4) # 0, 0, 0, 0, 0, 1, 2*T
 
             b = np.zeros(A.shape[0])
-            b[2] = W
+            b[2] = specify.W
             coeff = (np.linalg.solve(A, b))
         elif name == "sShape":
-            T = specify[0]
-            W = specify[1]
-            a3 = -2*W/T**3
-            a2 = 3*W/T**2
+            a3 = -2*specify.W/specify.T**3
+            a2 = 3*specify.W/specify.T**2
             coeff = np.array([a3,a2])
 
         elif name == "cubicS":
-            T = specify[0]
-            T1 = T/2
-            W = specify[1]
+            T1 = specify.T/2
             A = np.array([T1**2, T1**3, -1, -T1,-T1**2,-T1**3,
                             T1*2, 3*T1**2, 0, -1,-2*T1,-3*T1**2,
                             2, 6*T1, 0, 0,-2,-6*T1,
-                            0, 0, 1, T, T**2, T**3,
-                            0, 0, 0, 1, 2*T, 3*T**2,
-                            0, 0, 0, 0, 2, 6*T]).reshape(6, 6)
+                            0, 0, 1, specify.T, specify.T**2, specify.T**3,
+                            0, 0, 0, 1, 2*specify.T, 3*specify.T**2,
+                            0, 0, 0, 0, 2, 6*specify.T]).reshape(6, 6)
 
             b = np.zeros(A.shape[0])
-            b[3] = W
+            b[3] = specify.W
             coeff = np.linalg.solve(A, b)
         else:
             raise NameError('given trajecorty does not match any implemented one')
@@ -342,25 +430,24 @@ class trajectory:
         if not specify:
             specify = self.specifics
 
-        T = specify[0]
         if derivative == 'zero':
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = self.coeff[0]*t**2
-            elif t>=T/2 and t<T:
+            elif t>=specify.T/2 and t<specify.T:
                 y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
             else:
-                y= self.coeff[1]+self.coeff[2]*T+self.coeff[3]*T**2
+                y= self.coeff[1]+self.coeff[2]*specify.T+self.coeff[3]*specify.T**2
         elif derivative == 'first':
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = 2*self.coeff[0]*t
-            elif t>=T/2 and t<T:
+            elif t>=specify.T/2 and t<specify.T:
                 y = self.coeff[2]+2*self.coeff[3]*t
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = 2*self.coeff[0]
-            elif t>=T/2 and t<T:
+            elif t>=specify.T/2 and t<specify.T:
                 y = 2*self.coeff[3]
             else:
                 y=0
@@ -373,26 +460,25 @@ class trajectory:
         if not specify:
             specify = self.specifics
 
-        T = specify[0]
         if derivative == 'zero':
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = self.coeff[0]*t**2+self.coeff[1]*t**3
-            elif t>=T/2 and t<=T:
+            elif t>=specify.T/2 and t<=specify.T:
                 y = self.coeff[2]+self.coeff[3]*t+self.coeff[4]*t**2+self.coeff[5]*t**3
             else:
-                y = self.coeff[2]+self.coeff[3]*T+self.coeff[4]*T**2+self.coeff[5]*T**3
+                y = self.coeff[2]+self.coeff[3]*specify.T+self.coeff[4]*specify.T**2+self.coeff[5]*specify.T**3
         elif derivative == 'first':
 
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = 2*self.coeff[0]*t+3*self.coeff[1]*t**2
-            elif t>=T/2 and t<=T:
+            elif t>=specify.T/2 and t<=specify.T:
                 y = self.coeff[3]+2*self.coeff[4]*t+3*self.coeff[5]*t**2
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<T/2:
+            if t>=0 and t<specify.T/2:
                 y = 2*self.coeff[0]+6*self.coeff[1]*t
-            elif t>=T/2 and t<=T:
+            elif t>=specify.T/2 and t<=specify.T:
                 y = 2*self.coeff[4]+6*self.coeff[5]*t
             else:
                 y=0
@@ -403,20 +489,19 @@ class trajectory:
     def _sShape(self, t,specify = None, derivative="zero"):
         if not specify:
             specify = self.specifics
-        T = specify[0]
 
         if derivative == 'zero':
-            if t>=0 and t<=T:
+            if t>=0 and t<=specify.T:
                 y = self.coeff[0]*t**3+self.coeff[1]*t**2
             else:
-                y = self.coeff[0]*T**3+self.coeff[1]*T**2
+                y = self.coeff[0]*specify.T**3+self.coeff[1]*specify.T**2
         elif derivative == 'first':
-            if t>=0 and t<=T:
+            if t>=0 and t<=specify.T:
                 y = 3*self.coeff[0]*t**2+2*self.coeff[1]*t
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<=T:
+            if t>=0 and t<=specify.T:
                 y = 6*self.coeff[0]*t+2*self.coeff[1]
             else:
                 y = 0
@@ -428,31 +513,30 @@ class trajectory:
         if not specify:
             specify = self.specifics
 
-        T = specify[0]
         if derivative == 'zero':
-            if t>=0 and t<T/3:
+            if t>=0 and t<specify.T/3:
                 y = self.coeff[0]*t**2
-            elif t>=T/3 and t<2*T/3:
+            elif t>=specify.T/3 and t<2*specify.T/3:
                 y = self.coeff[1]+self.coeff[2]*t+self.coeff[3]*t**2
-            elif t>=2*T/3 and t<=T:
+            elif t>=2*specify.T/3 and t<=specify.T:
                 y = self.coeff[4]+self.coeff[5]*t+self.coeff[6]*t**2
             else:
                 y=0
         elif derivative == 'first':
-            if t>=0 and t<T/3:
+            if t>=0 and t<specify.T/3:
                 y = 2*self.coeff[0]*t
-            elif t>=T/3 and t<2*T/3:
+            elif t>=specify.T/3 and t<2*specify.T/3:
                 y = self.coeff[2]+2*self.coeff[3]*t
-            elif t>=2*T/3 and t<=T:
+            elif t>=2*specify.T/3 and t<=specify.T:
                 y = self.coeff[5]+2*self.coeff[6]*t
             else:
                 y=0
         elif derivative == 'second':
-            if t>=0 and t<T/3:
+            if t>=0 and t<specify.T/3:
                 y = 2*self.coeff[0]
-            elif t>=T/3 and t<2*T/3:
+            elif t>=specify.T/3 and t<2*specify.T/3:
                 y = 2*self.coeff[3]
-            elif t>=2*T/3 and t<=T:
+            elif t>=2*specify.T/3 and t<=specify.T:
                 y = 2*self.coeff[6]
             else:
                 y=0
