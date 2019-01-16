@@ -28,7 +28,7 @@ def talker(Imu_data, inverse_model):
     linear_vel_y=linear_vel_y+Imu_data.linear_acceleration.y
     real_angle = angle
 
-    endtime = inverse_model.trajectory.specifics[0]
+    endtime = inverse_model.trajectory.specifics.T
     print(start_time, endtime)
 
     if start_time < 1:
