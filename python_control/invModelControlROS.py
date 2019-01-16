@@ -29,7 +29,7 @@ class virtualCarContainer:
 
 
 class invModelControl:
-    def __init__(self,Vsoll,accSoll,W,trajectoryType="cubicS"):
+    def __init__(self,Vsoll,W,trajectoryType="cubicS",accSoll=0.1):
         self.solveroptions={'hmax':0.1}
         m = 2.26113  # Masse in kg
         Iz = 0.0274  # Trägheitsmoment in kg*m**2
@@ -114,6 +114,7 @@ class invModelControl:
     ################
 
     def simulateModel(self,y0,trange,model='complex', **kwargs):
+
         if model == 'complex':
             if y0.size < 5:
                y0=np.concatenate((y0,np.zeros((5-y0.size))),axis=None)
@@ -138,9 +139,11 @@ class invModelControl:
                 ode = lambda x,t : self.carModelDiscrete(x,t,**kwargs)
             except TypeError as error:
                 print(error)
+
             step = trange/5
             t = np.arange(0,trange+step,step)
             y = ODEsolver(ode, y0, t)
+
         elif model == 'full':
             if y0.size < 5:
                 y0=np.concatenate((y0,np.zeros((5-y0.size,))),axis=None)
@@ -233,10 +236,10 @@ class invModelControl:
             dphi = 0
         return [dxpos, dypos, dbetha, dpsi, dphi]
 
-    def carModelDiscrete(self,xa,t0,ub,uf):
+    def carModelDiscrete(self,xa,t0,ub=[1,0],uf=[1,0]):
         n=xa.size//2
         dx1 = self.carModelOneLane(xa[:n],t0,constInput=True, uc=ub)
-        dx2 = self.carModelOneLane(xa[n:],t0,constInput=True,uc=uf)
+        dx2 = self.carModelOneLane(xa[n:],t0,constInput=True, uc=uf)
         return np.concatenate((dx1,dx2),axis=None)
 
 

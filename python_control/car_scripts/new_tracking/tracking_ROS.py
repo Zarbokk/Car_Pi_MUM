@@ -1,5 +1,6 @@
 # !/usr/bin/env python
 from tracking_performance_class import tracking_red_dots
+import invModelControlROS as imcr
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import Image  # CompressedImage  # Image
@@ -57,7 +58,7 @@ def controller_verfolgen(x,y,alpha):
     accell_in = maxValue(9 * v_wanted, 4000)
     return accell_in, steering
 
-def callback(image, tracker):
+def callback(image, tracker,inverse_model):
     # print(image.encoding)
     brige = CvBridge()
     try:
@@ -93,11 +94,55 @@ def callback(image, tracker):
     x = np.cos(alpha) * distance
     y = np.sin(alpha) * distance
     print("x,y",x,y)
+    x_f=x
+    y_f=y
+    betha_f=0
+    psi_f=0
+    phi_f=0
+
+    x_b = 0
+    y_b = 0
+    betha_b = 0
+    psi_b = 0
+    phi_b = 0
+
+    states = np.array([x_f,y_f,betha_f,psi_f,phi_f,x_b,y_b,betha_b,psi_b,phi_b])
+    v_f=0
+    delta_f=0
+    u_f = np.array([v_f,delta_f])
+    v_b=0
+    delta_b=0
+    u_b = np.array([v_b,delta_b])
+    t_range=1/20
+    y_a=inverse_model.simulateModel(states, t_range, model="discrete", ub=[1,0], uf=[1,0])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
     accell_in,steering=controller_verfolgen(x,y,alpha)
-    print("accel",accell_in,steering)
+    #print("accel",accell_in,steering)
     # cv2.imshow("Image Window", frame)
     # cv2.waitKey(1)
     #
@@ -118,11 +163,12 @@ def callback(image, tracker):
 
 
 def listener():
+    geschwindigkeit=0.5
     # tracker = tracking_red_dots(308,410)
     # tracker = tracking_red_dots(960, 1280,350,900,400,960)
     tracker = tracking_red_dots(576, 768)
-
-    rospy.Subscriber("/raspicam_node/image", Image, callback, tracker)
+    inverse_model = imcr.invModelControl(geschwindigkeit, 0.4, "sShape")
+    rospy.Subscriber("/raspicam_node/image", Image, callback, tracker,inverse_model)
     rospy.spin()
     # video.release()
     cv2.destroyAllWindows()
