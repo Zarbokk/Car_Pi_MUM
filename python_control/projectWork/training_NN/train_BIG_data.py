@@ -5,7 +5,7 @@ import time
 import cv2
 
 steps_per_epoche=10
-number_epochs=1
+number_epochs=10
 
 kernel_size_first = 3
 conv_first = 16
