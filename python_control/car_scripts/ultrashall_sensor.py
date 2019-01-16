@@ -13,7 +13,7 @@ import time
 
 
 rospy.init_node('publisher', anonymous=True)
-pub = rospy.Publisher('distance_sensor', Range, queue_size=1)
+pub = rospy.Publisher('distance_sensor_03', Range, queue_size=1)
 rate = rospy.Rate(100)  # Frequenz der Anwendung
 
 GPIO.setmode(GPIO.BCM)

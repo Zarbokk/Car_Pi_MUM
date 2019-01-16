@@ -13,7 +13,7 @@ x_position = 0
 y_position = 0
 
 rospy.init_node('subscriber', anonymous=True)
-pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
+pub = rospy.Publisher('car_input_10', PointStamped, queue_size=1)
 rate = rospy.Rate(250)  # Frequenz der Anwendung
 number_ahead = 10
 Kv = 1
@@ -146,7 +146,7 @@ def setPos(odometry_data, data):  # has to be queed every step
     gamma = Kh * (angularDiff(theta_wanted, theta_car))
     gamma = maxValue(gamma * 180 / 3.14159, 29)
     # print(gamma)
-    steering = -gamma
+    steering = gamma
 
     # saved_steering = gamma
     v_wanted = Kv * np.sqrt(
@@ -170,7 +170,7 @@ def talker(odometry_data, data):
     # accell_in=0
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
-    message.point.x = accell_in  # aktuell in tick rate(+- 3900)
+    message.point.x = accell_in*1.5  # aktuell in tick rate(+- 3900)
     message.point.y = 2  # not used
     message.point.z = steering  # in grad(max +-20)
     rospy.loginfo(message)
