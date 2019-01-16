@@ -263,7 +263,7 @@ class trajectory:
         elif name == "quadS":
             T = 2*specify[1]/Vsoll
         elif name == "sShape":
-            T = 2*specify[1]/Vsoll
+            T = 1.5*specify[1]/Vsoll
         elif name == "cubicS":
             T = 2*specify[1]/Vsoll
         else:

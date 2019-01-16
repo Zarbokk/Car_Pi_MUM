@@ -32,6 +32,30 @@ def cubic_function(x, a, b, c, d):
 def tiefpass(x, x_old, rate=0.5):
     return x * (1 - rate) + x_old * rate
 
+def controller_verfolgen(x,y,alpha):
+
+    #print("distance x:", x, "distance y:", y, alpha * 180 / np.pi, distance)
+    x = x - 350
+
+    a = -y / x ** 3 + np.tan(alpha) / x ** 2
+    b = y / x ** 2 - a * x
+    y_pos = cubic_function(x / 2, a, b, 0, 0)
+
+    theta_wanted = np.arctan2(y_pos, x / 2)
+    #print(x / 2, y_pos, theta_wanted * 180 / np.pi)
+    # print(theta_wanted)
+    # print(theta_car)
+    gamma = 1 * (theta_wanted)
+    gamma = maxValue(gamma * 180 / 3.14159, 29)
+    # print(gamma)
+    steering = gamma
+
+    # saved_steering = gamma
+    v_wanted = 1 * (x/2-50)
+    # v_wanted = maxValue(v_wanted, 4095)
+    # accell_in = Kacell * (v_wanted - speed_car)
+    accell_in = maxValue(9 * v_wanted, 4000)
+    return accell_in, steering
 
 def callback(image, tracker):
     # print(image.encoding)
@@ -42,7 +66,6 @@ def callback(image, tracker):
     except CvBridgeError as e:
         print(e)
     global x_0, y_0, x_1, y_1, alpha
-    alpha_old = alpha
     x_0_old = x_0
     y_0_old = y_0
     x_1_old = x_1
@@ -52,9 +75,11 @@ def callback(image, tracker):
     y_0 = tiefpass(y_0, y_0_old)
     x_1 = tiefpass(x_1, x_1_old)
     y_1 = tiefpass(y_1, y_1_old)
+    alpha_old = alpha
+
     drehung = -np.arctan2(y_1 - y_0, x_1 - x_0) * 2.9
     drehung = drehung * 180 / np.pi
-    print("drehung", float(drehung))
+    #print("drehung", float(drehung))
     fov = 62.2
     f = 592.61
     hoehe_cam = 220
@@ -67,34 +92,15 @@ def callback(image, tracker):
 
     x = np.cos(alpha) * distance
     y = np.sin(alpha) * distance
+    print("x,y",x,y)
 
-    print("distance x:", x, "distance y:", y, alpha * 180 / np.pi, distance)
-    x = x - 300
 
-    a = -y / x ** 3 + np.tan(alpha) / x ** 2
-    b = y / x ** 2 - a * x
-    y_pos = cubic_function(x / 2, a, b, 0, 0)
 
-    theta_wanted = np.arctan2(y_pos, x / 2)
-    print(x / 2, y_pos, theta_wanted * 180 / np.pi)
-    # print(theta_wanted)
-    # print(theta_car)
-    gamma = 1 * (theta_wanted)
-    gamma = maxValue(gamma * 180 / 3.14159, 29)
-    # print(gamma)
-    steering = gamma
-
-    # saved_steering = gamma
-    v_wanted = 1 * x
-    # v_wanted = maxValue(v_wanted, 4095)
-    # accell_in = Kacell * (v_wanted - speed_car)
-    accell_in = maxValue(1.5 * v_wanted + 200, 4000)
-
-    print(accell_in)
-
+    accell_in,steering=controller_verfolgen(x,y,alpha)
+    print("accel",accell_in,steering)
     # cv2.imshow("Image Window", frame)
     # cv2.waitKey(1)
-
+    #
     # circle = cv2.circle(frame, (x_1, y_1), 5, 120, -1)
     # circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
     # cv2.imshow("Image Window", circle)

@@ -7,14 +7,14 @@ import numpy as np
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import PointStamped
 
-pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=1)
+pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
 rospy.init_node('talker', anonymous=True)
 rate = rospy.Rate(100)  # Frequenz der Anwendung
 start_time = 0
 angle = 0
 linear_vel_x = 0
 linear_vel_y = 0
-geschwindigkeit = 1.1
+geschwindigkeit = 1.1*1.5
 
 
 def talker(Imu_data, inverse_model):
@@ -36,7 +36,7 @@ def talker(Imu_data, inverse_model):
         v = geschwindigkeit
         delta = 0
     else:
-        v, delta, psi, y = inverse_model.carInput(start_time - 1)
+        v, delta, psi = inverse_model.carInput(start_time - 1)
         psi = -psi * 180 / 3.14159
         delta = -delta
         print (psi, real_angle / scaling_imu_angle)
@@ -47,7 +47,7 @@ def talker(Imu_data, inverse_model):
         print(delta, inverse_correction)
     # v = 2.2
     # delta = 0
-    if start_time > 3:
+    if start_time > 3-0.9:
         v = 0
         # delta = 0
     # v = 0
@@ -65,10 +65,10 @@ def talker(Imu_data, inverse_model):
 
 
 def subscribe():
-    inverse_model = imcr.invModelControl(geschwindigkeit, 0.7, "sShape")
+    inverse_model = imcr.invModelControl(geschwindigkeit, 0.4, "sShape")
 
     while not rospy.is_shutdown():
-        rospy.Subscriber('IMU_acceleration', Imu, talker, inverse_model)
+        rospy.Subscriber('IMU_03', Imu, talker, inverse_model)
         rospy.spin()
 
 
