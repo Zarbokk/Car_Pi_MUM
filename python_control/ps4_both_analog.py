@@ -42,7 +42,7 @@ def talker():
         for i in range(controller.get_numhats()):
             hat_data[i] = (0, 0)
 
-    pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=0)
+    pub = rospy.Publisher('car_input_10', PointStamped, queue_size=1)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(100)  # 100 hz
     input_motor_speed = 0

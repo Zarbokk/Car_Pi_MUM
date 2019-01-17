@@ -1,7 +1,5 @@
 # !/usr/bin/env python
 
-import cv2
-
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import Image
@@ -11,10 +9,13 @@ import rospy
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import Imu
 from tracking_performance_class import tracking_red_dots
-
+import invModelControlROS as imcr
+#from invModelControlforROS import invModelControl
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
 rate = rospy.Rate(20)  # Frequenz der Anwendung
+tracker= None
+inverse_model=None
 ueberholen = False
 linie_folgen = True
 fahrzeug_folgen = False
@@ -25,9 +26,19 @@ y_1 = 398
 alpha_car = 0
 x_car = 0
 y_car = 0
-tracker = tracking_red_dots(576, 768)
+angle_03=0
+time_overtake=0
 
-time_following = 0
+speed=1.1
+timer_always = 0
+
+states = np.array(
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])  # np.array([x_b, y_b, betha_b, psi_b, phi_b, x_f, y_f, betha_f, psi_f, phi_f])
+
+u_f = np.array([0, 0])
+
+u_b = np.array([0, 0])
+t_range = 1 / 20.0
 
 
 def transform_to_opencv(image):
@@ -52,7 +63,7 @@ def maxValue(regulate, max_value):
         regulate = max_value
     if regulate < -max_value:
         regulate = -max_value
-    return regulate
+    return float(regulate)
 
 
 def controller_verfolgen(x, y, alpha):
@@ -80,13 +91,69 @@ def controller_verfolgen(x, y, alpha):
     return accell_in, steering
 
 
-def overtake(imu_03_sub, car_f_sub, imu_10_sub):
-    return 0, 0
+def overtake(imu_03_sub, car_f_sub, imu_10_sub,inverse_model):
+    global angle_03,timer_always,speed,states,u_b,u_f
+    scaling_imu_angle = 17063036.0 / 4.0 / 360.0 * 5
+    angle_03 = angle_03 + imu_03_sub.angular_velocity.z
+    v = speed
+
+    initialdelaytime = 1
+    middledelaytime = 1
+
+    if timer_always < initialdelaytime:
+        v = speed
+        delta = 0
+    else:
+        if timer_always > inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
+            if states[0] > states[5]:
+                if not inverse_model.T0:
+                    print("init")
+                    inverse_model.T0 = timer_always
+                    # inverse_model.trajectory.setSpecifics([v,-inverse_model.trajectory.specifics.W])
+                    inverse_model.trajectory.updateVsoll(speed)
+                print("in seconds:",timer_always - inverse_model.T0)
+                v, delta, psi = inverse_model.carInput(timer_always - inverse_model.T0)
+                delta = -delta
+                psi = -psi
+                print(delta)
+                if timer_always > 1.5 * (inverse_model.trajectory.specifics.T + inverse_model.T0):
+                    v = 0
+                    states[0] = 0
+                    states[1] = 0
+
+            else:
+                delta = 0
+                psi = 0
+        elif timer_always > inverse_model.trajectory.specifics.T + initialdelaytime and timer_always < inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
+            delta = 0
+            psi = 0
+        else:
+            v, delta, psi = inverse_model.carInput(timer_always - initialdelaytime)
+        psi = -psi * 180 / 3.14159
+        delta = -delta
+        error = psi - angle_03 / scaling_imu_angle
+        # inverse_correction = inverse_model.trajectoryControler(error, 1.5 * 20) / 180 * 3.14159
+        inverse_correction = error * 1 / 180.0 * 3.14159
+        delta = delta + inverse_correction
+        # print(delta, inverse_correction)
+        # delta=np.pi/4
+        u_b[0] = v
+        u_b[1] = delta - inverse_correction
+        # print(u_b[1])
+        #print(t_range)
+        #print(type(t_range))
+        #print(states)
+        #print(u_b)
+        #print(u_f)
+        yback = inverse_model.simulateModel(states, t_range, model="discrete", ub=u_b, uf=u_f)
+        states = yback[-1, :]
+    return v*4000/2.2, delta*180/np.pi
 
 
 def follow_line(frame, ultraschall_sub, vel=0.6):
-    if ultraschall_sub.range < 15:
-        global linie_folgen, fahrzeug_folgen, x_0, x_1, y_0, y_1, alpha_car, time_following
+    #verolgen der linie hier einfuegen
+    if ultraschall_sub.range < 20:
+        global linie_folgen, fahrzeug_folgen, x_0, x_1, y_0, y_1, alpha_car, timer_always
         linie_folgen = False
         fahrzeug_folgen = True
         x_0 = 326
@@ -94,12 +161,12 @@ def follow_line(frame, ultraschall_sub, vel=0.6):
         x_1 = 400
         y_1 = 398
         alpha_car = 0
-        time_following = 0
+        timer_always = 0
     return vel * 4000 / 2.2, 0
 
 
 def follow_car(frame, tracker):
-    global x_0, y_0, x_1, y_1, alpha_car, x_car, y_car, time_following, ueberholen, fahrzeug_folgen
+    global x_0, y_0, x_1, y_1, alpha_car, x_car, y_car, timer_always, ueberholen, fahrzeug_folgen,angle_03,states,u_f,u_b
     x_0_old = x_0
     y_0_old = y_0
     x_1_old = x_1
@@ -127,24 +194,50 @@ def follow_car(frame, tracker):
     y_car = np.sin(alpha_car) * distance
     accell_in, steering = controller_verfolgen(x_car, y_car, alpha_car)
 
-    if time_following > 2:
+    if timer_always > 1:
         ueberholen = True
         fahrzeug_folgen = False
+        angle_03=0
+        x_f = x_car / 1000
+        y_f = y_car /1000
+        betha_f = 0.0
+        psi_f = alpha_car
+        phi_f = 0.0
+        v_f = accell_in/4000*2.2
+        delta_f = 0.0
+
+        x_b = 0.0
+        y_b = 0.0
+        betha_b = 0.0
+        psi_b = 0.0
+        phi_b = 0.0
+
+        v_b = accell_in/4000*2.2
+        delta_b = 0.0
+
+        u_f = np.array([v_f, delta_f])
+
+        u_b = np.array([v_b, delta_b])
+        states = np.array([x_b, y_b, betha_b, psi_b, phi_b, x_f, y_f, betha_f, psi_f, phi_f])
 
     return accell_in, steering
 
 
-def callback(image_sub=Image, imu_03_sub=Imu, ultraschall_sub=Range, car_f_sub=PointStamped, imu_10_sub=Imu):
+def callback(image_sub, imu_03_sub, ultraschall_sub, car_f_sub, imu_10_sub):
+    #print("huhu")
     frame = transform_to_opencv(image_sub)
-    global ueberholen, linie_folgen, fahrzeug_folgen, time_following
+    global ueberholen, linie_folgen, fahrzeug_folgen, timer_always,inverse_model,tracker
 
     if ueberholen:
-        accell_in, steering = overtake(imu_03_sub, car_f_sub, imu_10_sub)
+        print("Ueberholen")
+        accell_in, steering = overtake(imu_03_sub, car_f_sub, imu_10_sub,inverse_model)
     elif linie_folgen:
+        print("following_line")
         accell_in, steering = follow_line(frame, ultraschall_sub)
     elif fahrzeug_folgen:
-        accell_in, steering = follow_car(frame)
-    time_following = time_following + 1 / 20
+        print("verfolgen")
+        accell_in, steering = follow_car(frame,tracker)
+    timer_always = timer_always + 1 / 20.0
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
@@ -155,13 +248,15 @@ def callback(image_sub=Image, imu_03_sub=Imu, ultraschall_sub=Range, car_f_sub=P
     pub.publish(message)
     rate.sleep()
 
-
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
     # node are launched, the previous one is kicked off. The
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
+    global tracker,inverse_model
+    tracker = tracking_red_dots(576, 768)
+    inverse_model = imcr.invModelControl(speed, 0.4, "sShape")
     image_sub = message_filters.Subscriber('/raspicam_node/image', Image)
     ultraschall_sub = message_filters.Subscriber('/distance_sensor_03', Range)
     imu_03_sub = message_filters.Subscriber('/IMU_03', Imu)
@@ -169,7 +264,7 @@ def listener():
     car_f_sub = message_filters.Subscriber('/car_input_10', PointStamped)
 
     ts = message_filters.ApproximateTimeSynchronizer([image_sub, imu_03_sub, ultraschall_sub, car_f_sub, imu_10_sub],
-                                                     10, 2)
+                                                     100, 5)
     ts.registerCallback(callback)
     # rospy.init_node('listener', anonymous=True)
     rospy.spin()

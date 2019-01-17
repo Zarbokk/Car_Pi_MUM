@@ -67,6 +67,7 @@ def talker():
         imu_data.orientation.y = quaternion[1]
         imu_data.orientation.z = quaternion[2]
         imu_data.orientation.w = quaternion[3]
+        imu_data.header.stamp = rospy.Time.now()
         #rospy.loginfo(imu_data)
         pub.publish(imu_data)
         rate.sleep()

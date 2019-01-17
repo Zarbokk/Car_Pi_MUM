@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 from tracking_performance_class import tracking_red_dots
-import invModelControlROS as imcr
+from car_scripts import invModelControlROS as imcr
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import Image  # CompressedImage  # Image

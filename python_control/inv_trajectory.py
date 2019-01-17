@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # license removed for brevity
-import time
 import rospy
-import invModelControlROS as imcr
+from car_scripts import invModelControlROS as imcr
 import numpy as np
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
@@ -16,7 +15,7 @@ start_time = 0.0
 angle = 0.0
 linear_vel_x = 0.0
 linear_vel_y = 0.0
-geschwindigkeit = 1.1*1.2
+geschwindigkeit = 1.1 * 1.2
 x_f = 650.0 / 1000
 y_f = 0.0
 betha_f = 0.0
@@ -33,7 +32,7 @@ phi_b = 0.0
 v_b = 0.0
 delta_b = 0.0
 
-v=0
+v = 0
 
 states = np.array([x_b, y_b, betha_b, psi_b, phi_b, x_f, y_f, betha_f, psi_f, phi_f])
 
@@ -46,11 +45,11 @@ t_range = 1 / 50.0
 def talker(Imu_data, inverse_model):
     global angle
     global start_time, linear_vel_x, linear_vel_y
-    global states, u_f, u_b, t_range,v
+    global states, u_f, u_b, t_range, v
     y = 0
     error = 0
     psi = 0
-    scaling_imu_angle = 17063036.0 / 4.0 / 360.0*2
+    scaling_imu_angle = 17063036.0 / 4.0 / 360.0 * 2
     angle = angle + Imu_data.angular_velocity.z
     linear_vel_x = linear_vel_x + Imu_data.linear_acceleration.x
     linear_vel_y = linear_vel_y + Imu_data.linear_acceleration.y
@@ -66,20 +65,20 @@ def talker(Imu_data, inverse_model):
         v = geschwindigkeit
         delta = 0
     else:
-        if start_time > inverse_model.trajectory.specifics.T+initialdelaytime+middledelaytime :
-            if states[0] > states[5] :
+        if start_time > inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
+            if states[0] > states[5]:
                 if not inverse_model.T0:
                     print("init")
                     inverse_model.T0 = start_time
-                    #inverse_model.trajectory.setSpecifics([v,-inverse_model.trajectory.specifics.W])
+                    # inverse_model.trajectory.setSpecifics([v,-inverse_model.trajectory.specifics.W])
                     inverse_model.trajectory.updateVsoll(v)
                 print("in second")
                 print(start_time - inverse_model.T0)
                 v, delta, psi = inverse_model.carInput(start_time - inverse_model.T0)
-                delta =  -delta
+                delta = -delta
                 psi = -psi
                 print(delta)
-                if start_time > 1.5*(inverse_model.trajectory.specifics.T + inverse_model.T0):
+                if start_time > 1.5 * (inverse_model.trajectory.specifics.T + inverse_model.T0):
                     v = 0
                     states[0] = 0
                     states[1] = 0
@@ -87,7 +86,7 @@ def talker(Imu_data, inverse_model):
             else:
                 delta = 0
                 psi = 0
-        elif start_time > inverse_model.trajectory.specifics.T+initialdelaytime and start_time < inverse_model.trajectory.specifics.T+initialdelaytime+middledelaytime:
+        elif start_time > inverse_model.trajectory.specifics.T + initialdelaytime and start_time < inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
             delta = 0
             psi = 0
         else:
@@ -101,16 +100,16 @@ def talker(Imu_data, inverse_model):
         # print(delta, inverse_correction)
         # delta=np.pi/4
         u_b[0] = v
-        u_b[1] = delta-inverse_correction
-        #print(u_b[1])
+        u_b[1] = delta - inverse_correction
+        # print(u_b[1])
         yback = inverse_model.simulateModel(states, t_range, model="discrete", ub=u_b, uf=u_f)
         states = yback[-1, :]
-        #print(delta)
-        #print(states)
+        # print(delta)
+        # print(states)
     # v = 2.2
     # delta = 0
 
-        # delta = 0
+    # delta = 0
     # v = 0
     # delta = 0
 

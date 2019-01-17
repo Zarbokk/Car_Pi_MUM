@@ -19,10 +19,10 @@ class tracking_red_dots:
 
     def get_red_pos(self, frame, x_0, y_0, x_1, y_1, percentage_perf=0.1):
 
-        # circle = cv2.circle(frame.copy(), (x_1, y_1), 5, 120, -1)
-        # circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
-        # cv2.imshow('testshit', circle)
-        # cv2.waitKey(1)
+        circle = cv2.circle(frame.copy(), (x_1, y_1), 5, 120, -1)
+        circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
+        cv2.imshow('testshit', circle)
+        cv2.waitKey(1)
         """Get Red Position out of frame.
 
         (TODO) explain used routines:
