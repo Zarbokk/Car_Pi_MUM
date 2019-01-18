@@ -339,7 +339,7 @@ class trajectory:
         elif self.name == "quadS":
             T = 2*W/Vsoll
         elif self.name == "sShape":
-            T = 2*W/Vsoll
+            T = 1*W/Vsoll
         elif self.name == "cubicS":
             T = 2*W/Vsoll
         else:

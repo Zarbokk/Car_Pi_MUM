@@ -59,7 +59,7 @@ def talker():
         d = distance()
         if d>350 or d<5:
             d=old_distance
-        d=d*0.5+old_distance*0.5
+        d=d*0.9+old_distance*0.1
         message = Range()
         message.header.stamp = rospy.Time.now()
         message.range = d  # very noisy
@@ -67,7 +67,7 @@ def talker():
         pub.publish(message)
         rate.sleep()
         old_distance = d
-
+    GPIO.cleanup()
 
 if __name__ == '__main__':
     try:

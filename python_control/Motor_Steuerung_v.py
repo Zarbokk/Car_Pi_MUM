@@ -5,10 +5,10 @@ import rospy
 from geometry_msgs.msg import PointStamped
 
 def talker():
-    pub = rospy.Publisher('car_motor_input', PointStamped, queue_size=10)
+    pub = rospy.Publisher('car_input_10', PointStamped, queue_size=10)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(30) # Frequenz der Anwendung
-    input_motor_speed=0
+    input_motor_speed=1
     while not rospy.is_shutdown():
         num = raw_input('Geschwindigkeit:')
         try:
