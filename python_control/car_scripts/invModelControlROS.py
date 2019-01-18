@@ -128,9 +128,9 @@ class invModelControl:
         return v, delta, psi
 
     def trajectoryGen(self,t):
-        xsoll = self.Vsoll*t
-        dxsoll = self.Vsoll
-        ddxsoll = 0
+        xsoll = self.trajectory.generateXtrajectory(t)#self.Vsoll*t
+        dxsoll = self.trajectory.generateXtrajectory(t,derivative='first')#self.Vsoll
+        ddxsoll = self.trajectory.generateXtrajectory(t,derivative='second') #0
         ysoll = self.trajectory.generateSpline(t)
         dysoll = self.trajectory.generateSpline(t, derivative='first')
         ddysoll = self.trajectory.generateSpline(t, derivative='second')
@@ -363,6 +363,7 @@ class invModelControl:
 class specifics:
     def __init__(self):
         self.Vsoll = None
+        self.Vstart = None
         self.T = None
         self.W = None
         self.Psi = None
@@ -370,6 +371,9 @@ class specifics:
 
     def setVsoll(self,Vsoll):
         self.Vsoll = Vsoll
+
+    def setVstart(self,Vstart):
+        self.Vstart = Vstart
 
     def setT(self,T):
         self.T = np.abs(T)
@@ -631,6 +635,18 @@ class trajectory:
             raise NameError('requested derivative does not match any implemented one')
         return y
 
+    def generateXtrajectory(self,t,derivative='zero'):
+        if not self.specifics.Vstart:
+            self.specifics.setVstart(self.specifics.Vsoll)
+        if derivative == 'zero':
+            x = 0.5*(self.specifics.Vsoll-self.specifics.Vstart)*t**2+self.specifics.Vstart*t # assume sim starts with x=0
+        elif derivative == 'first':
+            x = (self.specifics.Vsoll-self.specifics.Vstart)*t+self.specifics.Vstart
+        elif derivative == 'second':
+            x = self.specifics.Vsoll-self.specifics.Vstart
+        else:
+            raise NameError('requested derivative does not match any implemented one')
+        return x
 
 
 
