@@ -28,7 +28,7 @@ alpha_car = 0
 x_car = 0
 y_car = 0
 angle_03 = 0
-
+accel_in_f_ma = 0
 speed = 1.1 * 0.9
 timer_always = 0
 
@@ -83,7 +83,7 @@ def overtake(imu_03_sub, inverse_model):
     global angle_03, timer_always, speed, states, u_b, u_f, linie_folgen, ueberholen
     scaling_imu_angle = 17063036.0 / 4.0 / 360.0 * 5 / 45.0
     angle_03 = angle_03 + imu_03_sub.angular_velocity.z
-    v = speed
+    #v = speed
 
     initialdelaytime = 0
     middledelaytime = 0
@@ -91,31 +91,33 @@ def overtake(imu_03_sub, inverse_model):
         v = speed
         delta = 0
     else:
+
         if timer_always > inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
             if states[0] > states[5]:
                 if not inverse_model.T0:
                     print("init")
                     inverse_model.T0 = timer_always
                     # inverse_model.trajectory.setSpecifics([v,-inverse_model.trajectory.specifics.W])
-                    inverse_model.trajectory.updateVsoll(speed)
+                    inverse_model.trajectory.specifics.setVstart(inverse_model.trajectory.specifics.Vsoll)
+
                 print("in seconds:", timer_always - inverse_model.T0)
                 v, delta, psi = inverse_model.carInput(timer_always - inverse_model.T0)
                 delta = -delta
                 psi = -psi
                 print(delta)
                 if timer_always > 4 * (inverse_model.trajectory.specifics.T) + inverse_model.T0:
-                    v = 0
-                    states[0] = 0
-                    states[1] = 0
+                    v = inverse_model.trajectory.specifics.Vsoll
                     linie_folgen = True
                     ueberholen = False
+                    inverse_model.T0=None
 
             else:
+                v=inverse_model.trajectory.specifics.Vsoll
                 delta = 0
                 psi = 0
-        elif timer_always > inverse_model.trajectory.specifics.T + initialdelaytime and timer_always < inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
-            delta = 0
-            psi = 0
+        # elif timer_always > inverse_model.trajectory.specifics.T + initialdelaytime and timer_always < inverse_model.trajectory.specifics.T + initialdelaytime + middledelaytime:
+        #     delta = 0
+        #     psi = 0
         else:
             v, delta, psi = inverse_model.carInput(timer_always - initialdelaytime)
         psi = -psi * 180 / 3.14159
@@ -141,7 +143,7 @@ def overtake(imu_03_sub, inverse_model):
 
 def follow_line(frame, ultraschall_sub, vel=0.6):
     # verolgen der linie hier einfuegen
-    if ultraschall_sub.range < 45:
+    if ultraschall_sub.range < 45:  # 45 cm
         global linie_folgen, fahrzeug_folgen, x_0, x_1, y_0, y_1, alpha_car, timer_always
         linie_folgen = False
         fahrzeug_folgen = True
@@ -151,18 +153,18 @@ def follow_line(frame, ultraschall_sub, vel=0.6):
         y_1 = 398 - 20
         alpha_car = 0
         timer_always = 0
-        return 0, 0
+        # return 0, 0
     return vel * 4000 / 2.2, 0
 
 
 def follow_car(frame, tracker):
-    global x_0, y_0, x_1, y_1, alpha_car, x_car, y_car, timer_always, ueberholen, fahrzeug_folgen, angle_03, states, u_f, u_b
+    global x_0, y_0, x_1, y_1, alpha_car, x_car, y_car, timer_always, ueberholen, fahrzeug_folgen, angle_03, states, inverse_model, u_f, u_b, accel_in_f_ma, speed
     x_0_old = x_0
     y_0_old = y_0
     x_1_old = x_1
     y_1_old = y_1
     alpha_old = alpha_car
-    x_0, y_0, x_1, y_1, can_see = tracker.get_red_pos(frame, x_0, y_0, x_1, y_1)
+    x_0, y_0, x_1, y_1, _ = tracker.get_red_pos(frame, x_0, y_0, x_1, y_1)
     x_0 = tiefpass(x_0, x_0_old)
     y_0 = tiefpass(y_0, y_0_old)
     x_1 = tiefpass(x_1, x_1_old)
@@ -182,10 +184,10 @@ def follow_car(frame, tracker):
     distance = np.sqrt(distance ** 2 - hoehe_cam ** 2)
     x_car = np.cos(alpha_car) * distance
     y_car = np.sin(alpha_car) * distance
-    print(alpha_car)
+    # print(alpha_car)
     accell_in, steering = controller_verfolgen(x_car, y_car, alpha_car)
-
-    if timer_always > 10:
+    accel_in_f_ma = tiefpass(accell_in, accel_in_f_ma, 0.95)
+    if timer_always > 4:
         ueberholen = True
         fahrzeug_folgen = False
         angle_03 = 0
@@ -194,7 +196,7 @@ def follow_car(frame, tracker):
         betha_f = 0.0
         psi_f = alpha_car
         phi_f = 0.0
-        v_f = accell_in / 4000 * 2.2
+        v_f = accel_in_f_ma / 4000 * 2.2  # moving average
         delta_f = 0.0
 
         x_b = 0.0
@@ -204,12 +206,15 @@ def follow_car(frame, tracker):
         phi_b = 0.0
 
         v_b = accell_in / 4000 * 2.2
-        delta_b = 0.0
+        delta_b = steering
 
         u_f = np.array([v_f, delta_f])
 
         u_b = np.array([v_b, delta_b])
         states = np.array([x_b, y_b, betha_b, psi_b, phi_b, x_f, y_f, betha_f, psi_f, phi_f])
+        inverse_model.trajectory.specifics.setVstart(accell_in / 4000 * 2.2)
+        inverse_model.trajectory.updateVsoll((accell_in + 700) / 4000 * 2.2)
+        speed = accell_in
         timer_always = 0
 
     return accell_in, steering
@@ -218,14 +223,14 @@ def follow_car(frame, tracker):
 def callback(image_sub, imu_03_sub, ultraschall_sub):
     # print("huhu")
     frame = transform_to_opencv(image_sub)
-    global ueberholen, linie_folgen, fahrzeug_folgen, timer_always, inverse_model, tracker
+    global ueberholen, linie_folgen, fahrzeug_folgen, timer_always, inverse_model, tracker, speed
     imu_angle = 0
     if ueberholen:
         print("Ueberholen")
         accell_in, steering, imu_angle = overtake(imu_03_sub, inverse_model)
     elif linie_folgen:
         print("following_line")
-        accell_in, steering = follow_line(frame, ultraschall_sub)
+        accell_in, steering = follow_line(frame, ultraschall_sub, vel=speed)
     elif fahrzeug_folgen:
         print("verfolgen")
         accell_in, steering = follow_car(frame, tracker)
@@ -249,7 +254,7 @@ def listener():
     # run simultaneously.
     global tracker, inverse_model
     tracker = tracking_red_dots(576, 768)
-    inverse_model = imcr.invModelControl(speed, 0.4, "cubicS")
+    inverse_model = imcr.invModelControl(speed, 0.4, "quadS")
     image_sub = message_filters.Subscriber('/raspicam_node/image', Image)
     ultraschall_sub = message_filters.Subscriber('/distance_sensor_03', Range)
     imu_03_sub = message_filters.Subscriber('/IMU_03', Imu)

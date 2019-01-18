@@ -636,14 +636,28 @@ class trajectory:
         return y
 
     def generateXtrajectory(self,t,derivative='zero'):
+
         if not self.specifics.Vstart:
             self.specifics.setVstart(self.specifics.Vsoll)
         if derivative == 'zero':
-            x = 0.5*(self.specifics.Vsoll-self.specifics.Vstart)*t**2+self.specifics.Vstart*t # assume sim starts with x=0
+            if t>= 0 and t <= self.specifics.T:
+                x = 0.5*(self.specifics.Vsoll-self.specifics.Vstart)*t**2+self.specifics.Vstart*t # assume sim starts with x=0
+            elif t < 0:
+                x = self.specifics.Vstart*np.abs(t)
+            else:
+                x = self.specifics.Vsoll*t
         elif derivative == 'first':
-            x = (self.specifics.Vsoll-self.specifics.Vstart)*t+self.specifics.Vstart
+            if t >= 0 and t <= self.specifics.T:
+                x = (self.specifics.Vsoll-self.specifics.Vstart)*t+self.specifics.Vstart
+            elif t < 0:
+                x = self.specifics.Vstart
+            else:
+                x = self.specifics.Vsoll
         elif derivative == 'second':
-            x = self.specifics.Vsoll-self.specifics.Vstart
+            if t >= 0 and t <= self.specifics.T:
+                x = self.specifics.Vsoll-self.specifics.Vstart
+            else:
+                x=0
         else:
             raise NameError('requested derivative does not match any implemented one')
         return x
