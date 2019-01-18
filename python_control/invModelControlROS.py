@@ -29,7 +29,7 @@ class virtualCarContainer:
 
 
 class invModelControl:
-    def __init__(self,Vsoll,W,trajectoryType="cubicS",accSoll=0.1):
+    def __init__(self,Vsoll,W,trajectoryType="cubicS",accSoll=0.1,Psi=None,R=None):
         self.solveroptions={'hmax':0.1}
         m = 2.26113  # Masse in kg
         Iz = 0.0274  # Trägheitsmoment in kg*m**2
@@ -38,7 +38,10 @@ class invModelControl:
         EG = 0.0547  # eigenlenkgradient aus parameterident
         self.param=parameters(m, Iz, lv, lh, EG)
         self.Vsoll = Vsoll
-        self.trajectory = trajectory((Vsoll,W),name=trajectoryType)
+        if not Psi or not R:
+            self.trajectory = trajectory((Vsoll,W),name=trajectoryType)
+        else:
+            self.trajectory = trajectory((Vsoll,W,Psi,R),name=trajectoryType)
         self.overtake = False
         self.T0 = None
         self.accSoll = accSoll
@@ -48,7 +51,7 @@ class invModelControl:
     # first all functions for the changelane maneuver
     ################
 
-    def carInput(self,t,phase='changeLane'):
+    def carInput(self,t,phase='changeLane',dpsi=None):
         if phase == 'changeLane':
             p,dp,ddp = self.trajectoryGen(t)
             v,delta,psi = self.invModel(p,dp,ddp)
@@ -57,18 +60,52 @@ class invModelControl:
             elif delta < self.degToRad(-29):
                 delta = self.degToRad(-29)
         elif phase == 'straightLine':
-            v = self.Vsoll+self.accSoll*t
+            v = self.Vsoll#+self.accSoll*t
             delta = 0
             psi = 0
+        elif phase == 'circleLine':
+            p,dp,ddp = self.circle(t)
+            v,delta,psi = self.invModel(p,dp,ddp)
+
         return v, delta, psi
 
-#    def completeManeuver(self,t):
-#        T=self.trajectory.specifics[0]
-#        if t>=0 and t<=T:
-#            v,delta,psi = self.carInput(t,phase='changeLane')
-#        elif t>T:
-#            overtake = self.tryToOvertake()
-#            if overtake :
+    def circle(self,t):
+        Rs=self.trajectory.specifics.R-self.trajectory.specifics.W
+        dpsi = self.Vsoll/Rs
+        psi = dpsi*t
+        x=self.trajectory.specifics.R*np.sin(psi)
+        y=-Rs*np.cos(psi)
+        p=np.array([x,y])
+        dx=self.trajectory.specifics.R*dpsi*np.cos(psi)
+        dy = Rs*dpsi*np.sin(psi)
+        dp = np.array([dx,dy])
+        ddx = -self.trajectory.specifics.R*dpsi**2*np.sin(psi)
+        ddy = Rs*dpsi**2*np.cos(psi)
+        ddp = np.array([ddx,ddy])
+        return p,dp,ddp
+
+    def completeManeuver(self,t,maneuver='line'):
+        T=self.trajectory.specifics.T
+        delay = 1
+        if maneuver == 'line':
+            if t>=0 and t<=T:
+                #self.trajectory.setSpecifics([self.Vsoll,self.trajectory.specifics.W])
+                v,delta,psi = self.carInput(t,phase='changeLane')
+                #print(psi)
+            elif t>T+delay and t <=2*T+delay:
+                if not self.T0:
+                    print("init")
+                    self.T0=t
+                #self.trajectory.setSpecifics([self.Vsoll,-self.trajectory.specifics.W])
+                v,delta,psi = self.carInput(t-self.T0,phase='changeLane')
+                delta = -delta
+                psi = -psi
+            else:
+                v,delta,psi = self.carInput(t,phase='straightLine')
+        elif maneuver == 'circle':
+            v,delta,psi = self.carInput(t,phase='circleLine')
+        return v,delta,psi
+
 
 
     def trajectoryControler(self,error,p=10):
@@ -185,7 +222,7 @@ class invModelControl:
         dx = np.array([np.cos(psi), np.sin(psi), np.tan(delta)/self.param.L])*v
         return dx
 
-    def carModelOneLane(self,x, t0,control=True, constInput=False,uc=[1,0]):
+    def carModelOneLane(self,x, t0,control=True, constInput=False,uc=[1,0],completeManeuver = False):
 #        if 'constInput' in kwargs.keys():
 #            constInput = kwargs['constInput']
 #            if 'uc' in
@@ -202,13 +239,19 @@ class invModelControl:
         if  constInput:
             v = uc[0]
             delta = uc[1]
+        elif completeManeuver:
+            v,delta,psisoll = self.completeManeuver(t0,maneuver = 'circle')
+            if control:
+                error = self.radToDeg(psisoll-psi)
+                ddelta = self.trajectoryControler(error)
+                delta = delta+self.degToRad(ddelta)
+
         else:
             v, delta,psisoll = self.carInput(t0)
             if control:
                 error = self.radToDeg(psisoll-psi)
                 ddelta = self.trajectoryControler(error)
                 delta = delta+self.degToRad(ddelta)
-
         if v == 0:
             v=vTol
         v = np.sign(v)*np.max([np.abs(v),vTol])
@@ -318,14 +361,28 @@ class invModelControl:
         return xPosBackCar-self.param.lh > xPosFrontCar
 
 class specifics:
+    def __init__(self):
+        self.Vsoll = None
+        self.T = None
+        self.W = None
+        self.Psi = None
+        self.R = None
+
     def setVsoll(self,Vsoll):
         self.Vsoll = Vsoll
 
     def setT(self,T):
-        self.T = T
+        self.T = np.abs(T)
 
     def setW(self,W):
         self.W=W
+
+    def setPsi(self,Psi):
+        self.Psi=Psi
+
+    def setR(self,R):
+        self.R=R
+
 
 class trajectory:
     def __init__(self,specify ,name="cubicS",):
@@ -364,11 +421,15 @@ class trajectory:
             name = self.name
         else:
             self.name = name
+        n=len(specify)
         self.specifics = specifics()
         self.specifics.setVsoll(specify[0])
         self.specifics.setW(specify[1])
         T = self.VsollToT(self.specifics.Vsoll,self.specifics.W)
         self.specifics.setT(T)
+        if n > 2:
+            self.specifics.setPsi(specify[2])
+            self.specifics.setR(specify[3])
         self.coeff = self.calcCoeff()
 
     def calcCoeff(self,specify=None, name = None):
@@ -376,7 +437,15 @@ class trajectory:
             specify = self.specifics
         if not name:
             name = self.name
+        if not specify.Psi or not specify.R:
+            Wp = specify.W
+            m = 0
+        else:
+            Wp = specify.R-np.cos(specify.Psi)*(specify.R-specify.W)
+            m = np.tan(specify.Psi)
+
         if name == "parabolic":
+
             A = np.array([(specify.T**2)/9, -1, -specify.T/3, -(specify.T**2)/9, 0, 0, 0,
                             2*specify.T/3, 0, -1, -2*specify.T/3, 0, 0, 0,
                             0, 1, specify.T/2, (specify.T**2)/4, 0, 0, 0,
@@ -387,19 +456,32 @@ class trajectory:
             b = np.zeros(A.shape[0])
             b[2] = specify.W
             coeff = np.linalg.solve(A, b)
+        elif name == "quad":
+            A = np.array([1,0,0,
+                          1,specify.T,specify.T**2,
+                          0,1,2*specify.T]).reshape(3, 3) # 0, 0, 0, 0, 0, 1, 2*T
+
+            b = np.array([0,Wp,m])
+            coeff = (np.linalg.solve(A, b))
         elif name == "quadS":
+            #if self.specifics.Psi:
             A = np.array([(specify.T**2)/4, -1, -specify.T/2, -(specify.T**2)/4,
                             2*specify.T/2, 0, -1, -2*specify.T/2,
                             0, 1, specify.T, (specify.T**2),
-                            0, 0, 1, 2*specify.T,]).reshape(4, 4) # 0, 0, 0, 0, 0, 1, 2*T
+                            0, 0, 1, 2*specify.T]).reshape(4, 4) # 0, 0, 0, 0, 0, 1, 2*T
 
             b = np.zeros(A.shape[0])
-            b[2] = specify.W
+            b[2] = Wp
+            b[3] = m
             coeff = (np.linalg.solve(A, b))
         elif name == "sShape":
-            a3 = -2*specify.W/specify.T**3
-            a2 = 3*specify.W/specify.T**2
-            coeff = np.array([a3,a2])
+            A = np.array([specify.T**3, specify.T**2,
+                          3*specify.T**2, 2*specify.T]).reshape(2, 2)
+            #a3 = -2*specify.W/specify.T**3
+            #a2 = 3*specify.W/specify.T**2
+            b = np.array([Wp,m])
+            coeff = np.linalg.solve(A, b)
+            #coeff = np.array([a3,a2])
 
         elif name == "cubicS":
             T1 = specify.T/2
@@ -412,6 +494,7 @@ class trajectory:
 
             b = np.zeros(A.shape[0])
             b[3] = specify.W
+            b[4] = m
             coeff = np.linalg.solve(A, b)
         else:
             raise NameError('given trajecorty does not match any implemented one')
@@ -428,6 +511,7 @@ class trajectory:
             return self._cubicsSpline(t,derivative=derivative)
         else:
             raise NameError('given trajecorty does not match any implemented one')
+
 
     def _quadsSpline(self, t, specify = None, derivative='zero'):
         if not specify:
