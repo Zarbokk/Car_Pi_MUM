@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-class tracking_red_dots:
+class tracking_red_dots_old:
     def __init__(self, height, width, x, w, y, h):
         # TODO: proper variable namings OR good explanation
         self.resize = 1

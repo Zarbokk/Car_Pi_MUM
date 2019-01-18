@@ -17,8 +17,12 @@ class tracking_red_dots:
         self.area_0 = area_dots * self.resize_image_perf
         self.area_1 = area_dots * self.resize_image_perf
 
-    def get_red_pos(self, frame, x_0, y_0, x_1, y_1, percentage_perf=0.1):
-
+    def get_red_pos(self, frame, x_0, y_0, x_1, y_1, percentage_perf=0.15):
+        x_0 = int(x_0)
+        x_1 = int(x_1)
+        y_0 = int(y_0)
+        y_1 = int(y_1)
+        #
         # circle = cv2.circle(frame.copy(), (x_1, y_1), 5, 120, -1)
         # circle = cv2.circle(circle, (x_0, y_0), 5, 120, -1)
         # cv2.imshow('testshit', circle)
