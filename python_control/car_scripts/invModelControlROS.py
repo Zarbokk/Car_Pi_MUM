@@ -63,9 +63,9 @@ class invModelControl:
             v = self.Vsoll#+self.accSoll*t
             delta = 0
             psi = 0
-        elif phase == 'circleLine':
-            p,dp,ddp = self.circle(t)
-            v,delta,psi = self.invModel(p,dp,ddp)
+#        elif phase == 'circleLine':
+#            p,dp,ddp = self.circle(t)
+#            v,delta,psi = self.invModel(p,dp,ddp)
 
         return v, delta, psi
 
@@ -108,11 +108,44 @@ class invModelControl:
 
 
 
-    def trajectoryControler(self,error,p=10):
+    def trajectoryControler(self,error,t=None,p=10):
         maxerror = 30
-        maxsteering = 10
-        errorConv = error/maxerror*maxsteering
-        return p*errorConv
+        maxsteering = 29
+        if not t:
+            errorConv = error/maxerror*maxsteering
+            return p*errorConv
+        else:
+            return self.funnelControler(-error,t,maxsteering)
+
+    def funnelControler(self,error,t,a):
+        '''
+        parameters
+        ---------
+        error : = ist - soll ( das ist die negative Definition unserer bisherigen Fehler Definition)
+        a : ist die Sättigung, was der Regler maximal an Lenkwinkel ändern kann.
+            (beachte, dass wir den Output auf das delta der Vorsteuerung noch addieren)
+        t : ist die Zeit. hier könnte man überlegen, ob man wie bei der Trajektorie wieder über die Referenzzeit von null startet.
+        '''
+        ph = self.funnel(t)
+        if abs(ph*error)<1:
+            #print('inside of funnel')
+            u=-error/(1-ph**2*error**2)
+            u=self.saturate(u,a)
+        else:
+            #print('outside of funnel')
+            u=-a*np.sign(error)
+        return u
+
+    def funnel(self,t):
+        return np.e**(-t)+1
+
+
+    def saturate(self,u,a):
+        if u>=0:
+            u = np.min([u,a])
+        else:
+            u=np.max([u,-a])
+        return u
 
     def invModel(self,p, dp, ddp):
         # dxsoll**2+dysoll**2 unequal 0
@@ -240,18 +273,19 @@ class invModelControl:
             v = uc[0]
             delta = uc[1]
         elif completeManeuver:
-            v,delta,psisoll = self.completeManeuver(t0,maneuver = 'circle')
+            v,delta,psisoll = self.completeManeuver(t0,maneuver = 'line')
             if control:
                 error = self.radToDeg(psisoll-psi)
-                ddelta = self.trajectoryControler(error)
+                ddelta = self.trajectoryControler(error,t=t0)
                 delta = delta+self.degToRad(ddelta)
 
         else:
             v, delta,psisoll = self.carInput(t0)
             if control:
                 error = self.radToDeg(psisoll-psi)
-                ddelta = self.trajectoryControler(error)
+                ddelta = self.trajectoryControler(error,t=t0)
                 delta = delta+self.degToRad(ddelta)
+        delta = self.saturate(delta,self.degToRad(29))
         if v == 0:
             v=vTol
         v = np.sign(v)*np.max([np.abs(v),vTol])
