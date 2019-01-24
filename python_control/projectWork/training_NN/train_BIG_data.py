@@ -4,8 +4,8 @@ import numpy as np
 import time
 import cv2
 
-steps_per_epoche=10
-number_epochs=10
+steps_per_epoche=4158
+number_epochs=500
 
 kernel_size_first = 3
 conv_first = 16
@@ -18,7 +18,7 @@ conv_fourth = 128
 
 
 learning_rate=0.001
-batch_size = 64
+batch_size = 128
 
 def generate_arrays_from_file(path, printing):
     while 1:
@@ -73,13 +73,15 @@ model.add(keras.layers.Flatten())
 # model.add(keras.layers.Dropout(0.5))
 model.add(keras.layers.Dense(64, activation='relu'))
 model.add(keras.layers.Dropout(0.5))
+model.add(keras.layers.Dense(64, activation='relu'))
+model.add(keras.layers.Dropout(0.5))
 model.add(keras.layers.Dense(1, activation='linear'))
 
 model.compile(loss=keras.losses.mean_squared_error,
               optimizer=keras.optimizers.Adam(lr=learning_rate))
 
 model.fit_generator(generate_arrays_from_file(
-    "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
+    "/home/tim/Desktop/augmented_data_FULL.csv",
     False),
                     steps_per_epoch=steps_per_epoche, epochs=number_epochs)
 # model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",),
@@ -99,5 +101,5 @@ model.fit_generator(generate_arrays_from_file(
 #    True), 10, max_queue_size=1))
 # print(y_train)
 
-#model.save("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/test_model_complete_64x36.h5")
+model.save("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/best_model_theory.h5")
 # model.save_weights("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/test_model_64x36.h5")
