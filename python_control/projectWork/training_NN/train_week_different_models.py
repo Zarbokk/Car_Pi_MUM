@@ -151,7 +151,7 @@ input_shape = (img_rows, img_cols, 1)
 # y_train = keras.utils.to_categorical(y_train, 1)
 # y_test = keras.utils.to_categorical(y_test, 1)
 # time.sleep(10)
-
+00101
 for i in range(0, 2):
     for j in range(0, 3):
         for k in range(0, 2):
