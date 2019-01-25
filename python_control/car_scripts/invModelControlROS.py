@@ -134,7 +134,7 @@ class invModelControl:
         return u
 
     def funnel(self, t):
-        return np.e ** (-t) + 1
+        return np.e ** (-2*t) + 5
 
     def saturate(self, u, a):
         if u >= 0:
@@ -158,13 +158,13 @@ class invModelControl:
 
     def trajectoryGen(self, t):
         if self.trajectory.specifics.name == 'nineP':
-            xsoll, ysoll = self.trajectory.generateParametrizedPath(t,None)
-            dxsoll, dysoll = self.trajectory.generateParametrizedPath(t,xsoll, derivative='first')
-            ddxsoll, ddysoll = self.trajectory.generateParametrizedPath(t,xsoll, derivative='second')
+            xsoll, ysoll = self.trajectory.generateParametrizedPath(t, None)
+            dxsoll, dysoll = self.trajectory.generateParametrizedPath(t, xsoll, derivative='first')
+            ddxsoll, ddysoll = self.trajectory.generateParametrizedPath(t, xsoll, derivative='second')
             p = np.array([xsoll, ysoll]).reshape(2)
             # modeling that y is a function of x(t) :  y(x(t)) leads to chainrule
-            dp = np.array([dxsoll,dysoll * dxsoll]).reshape(2)
-            ddp = np.array([ddxsoll,ddysoll * dxsoll**2 + ddxsoll * dysoll]).reshape(2)
+            dp = np.array([dxsoll, dysoll * dxsoll]).reshape(2)
+            ddp = np.array([ddxsoll, ddysoll * dxsoll ** 2 + ddxsoll * dysoll]).reshape(2)
 
         else:
             xsoll = self.trajectory.generateXtrajectory(t)  # self.Vsoll*t
@@ -178,8 +178,6 @@ class invModelControl:
             dp = np.array([dxsoll, dysoll]).reshape(2)
             ddp = np.array([ddxsoll, ddysoll]).reshape(2)
         return p, dp, ddp
-
-
 
     def radToDeg(self, x):
         return x / np.pi * 180
@@ -291,9 +289,9 @@ class invModelControl:
             v, delta, psisoll = self.carInput(t0)
             if control:
                 error = self.radToDeg(psisoll - psi)
-                ddelta = self.trajectoryControler(error,t0)
+                ddelta = self.trajectoryControler(error, t0)
                 delta = delta + self.degToRad(ddelta)
-        #delta = self.saturate(delta, self.degToRad(29))
+        # delta = self.saturate(delta, self.degToRad(29))
         if v == 0:
             v = vTol
         v = np.sign(v) * np.max([np.abs(v), vTol])
@@ -414,6 +412,7 @@ class TrajectorySpecifics:
             self.Vstart = Vsoll
         else:
             self.Vstart = Vstart
+        self.Vstart = max(self.Vstart,0.17)
         self.Psi = Psi
         self.R = R
         self.T, self.D = self.VWtoDT()
@@ -424,14 +423,14 @@ class TrajectorySpecifics:
         if self.name == "parabolic":
             D = 4 * self.W
         else:
-            D = 3*self.W
-#            if Vmiddle <= Vmax / 4:
-#                D = self.W
-#            elif Vmax / 4 < Vmiddle <= Vmax:  # linear scaling of D between W and 3W
-#                Vm = Vmiddle / Vmax
-#                D = self.W * (8 / 3 * Vm + 1 / 3)
-#            else:
-#                D = 3 * self.W
+            D = 3 * self.W
+        #            if Vmiddle <= Vmax / 4:
+        #                D = self.W
+        #            elif Vmax / 4 < Vmiddle <= Vmax:  # linear scaling of D between W and 3W
+        #                Vm = Vmiddle / Vmax
+        #                D = self.W * (8 / 3 * Vm + 1 / 3)
+        #            else:
+        #                D = 3 * self.W
         T = D / Vmiddle
         return abs(T), abs(D)
 
@@ -441,6 +440,7 @@ class TrajectorySpecifics:
 
     def setVstart(self, Vstart):
         self.Vstart = Vstart
+        self.Vstart = max(self.Vstart, 0.17)
         self.T, self.D = self.VWtoDT()
 
     def setW(self, W):
@@ -456,6 +456,7 @@ class TrajectorySpecifics:
             self.Vstart = Vsoll
         if W:
             self.W = W
+        self.Vstart = max(self.Vstart, 0.17)
 
         self.T, self.D = self.VWtoDT()
 
@@ -480,6 +481,8 @@ class TrajectorySpecifics:
             self.Psi = Psi
         if R:
             self.R = R
+
+        self.Vstart = max(self.Vstart, 0.17)
         self.T, self.D = self.VWtoDT()
 
 
@@ -509,9 +512,9 @@ class trajectory:
         if not specify.Psi or not specify.R:
             Wp = specify.W
             m = 0
-#        else:
-#            Wp = specify.R - np.cos(specify.Psi) * (specify.R - specify.W)
-#            m = np.tan(specify.Psi)
+        #        else:
+        #            Wp = specify.R - np.cos(specify.Psi) * (specify.R - specify.W)
+        #            m = np.tan(specify.Psi)
 
         if name == "parabolic":
 
@@ -583,13 +586,13 @@ class trajectory:
             b[5] = Wp  # W for y D for x D should depend on V
             b[6] = 0  # 0 for y Vsoll for x
             coeff = np.linalg.solve(A, b)
-            if name == 'nineP': # nineP is a parametrized path therefore x and y a polynomes
+            if name == 'nineP':  # nineP is a parametrized path therefore x and y a polynomes
                 b[0] = 0  # 0 for y, 0 for x
                 b[1] = specify.Vstart  # 0.01 for y  Vstart for x
                 b[5] = specify.D  # W for y D for x D should depend on V
                 b[6] = specify.Vsoll  # 0 for y Vsoll for x
                 coeffx = np.linalg.solve(A, b)
-                coeff = np.stack((coeff,coeffx))
+                coeff = np.stack((coeff, coeffx))
 
         else:
             raise NameError('given trajecorty does not match any implemented one')
@@ -605,7 +608,7 @@ class trajectory:
         elif self.specifics.name == "cubicS":
             return self._cubicsSpline(t, derivative=derivative)
         elif self.specifics.name == 'nineS':
-            return self._nineSpline(t,derivative=derivative)
+            return self._nineSpline(t, derivative=derivative)
         else:
             raise NameError('given trajecorty does not match any implemented one')
 
@@ -728,40 +731,40 @@ class trajectory:
         return y
 
     def _nineSpline(self, t, derivative='zero'):
-        return self._ninePolynom(t,self.specifics.T,derivative=derivative)
+        return self._ninePolynom(t, self.specifics.T, derivative=derivative)
 
-    def _ninePolynom(self, t, normalizer, derivative='zero',coeffaxis=None):
+    def _ninePolynom(self, t, normalizer, derivative='zero', coeffaxis=None):
         if coeffaxis is None:
-            coeff= self.coeff
+            coeff = self.coeff
         else:
-            coeff = self.coeff[coeffaxis,:]
+            coeff = self.coeff[coeffaxis, :]
         v = t / normalizer
         vpower = np.array([v ** i for i in np.arange(0, 10)])
         if derivative == 'zero':
             if 0 <= v <= 1:
-                #s = self._polyHorner(v,coeff)
+                # s = self._polyHorner(v,coeff)
                 s = np.sum(coeff * vpower)
-                #print(s==s1)
+                # print(s==s1)
             else:
                 s = np.sum(coeff)
         elif derivative == 'first':
             if 0 <= v <= 1:
 
                 coeff = coeff[1:] * np.arange(1, 10)
-                #s = self._polyHorner(v,coeff)
+                # s = self._polyHorner(v,coeff)
                 s = np.sum(coeff * vpower[:-1])
-                #print(s==s1)
+                # print(s==s1)
             else:
-                s=0
+                s = 0
         elif derivative == 'second':
             if 0 <= v <= 1:
                 coeff = coeff[1:] * np.arange(1, 10)
                 coeff = coeff[1:] * np.arange(1, 9)
                 s = np.sum(coeff * vpower[:-2])
-                #s = self._polyHorner(v,coeff)
-                #print(s==s1)
+                # s = self._polyHorner(v,coeff)
+                # print(s==s1)
             else:
-                s=0
+                s = 0
         else:
             raise NameError('requested derivative does not match any implemented one')
         return s
@@ -779,32 +782,32 @@ class trajectory:
         if derivative == 'zero':
             if 0 <= t <= self.specifics.T:
                 x = 0.5 * (
-                            self.specifics.Vsoll - self.specifics.Vstart) * t ** 2 + self.specifics.Vstart * t  # assume sim starts with x=0
+                        self.specifics.Vsoll - self.specifics.Vstart) / self.specifics.T * t ** 2 + self.specifics.Vstart * t  # assume sim starts with x=0
             elif t < 0:
                 x = self.specifics.Vstart * np.abs(t)
             else:
                 x = self.specifics.Vsoll * t
         elif derivative == 'first':
             if 0 <= t <= self.specifics.T:
-                x = (self.specifics.Vsoll - self.specifics.Vstart) * t + self.specifics.Vstart
+                x = (self.specifics.Vsoll - self.specifics.Vstart) * t / self.specifics.T + self.specifics.Vstart
             elif t < 0:
                 x = self.specifics.Vstart
             else:
                 x = self.specifics.Vsoll
         elif derivative == 'second':
             if 0 <= t <= self.specifics.T:
-                x = self.specifics.Vsoll - self.specifics.Vstart
+                x = (self.specifics.Vsoll - self.specifics.Vstart)/self.specifics.T
             else:
                 x = 0
         else:
             raise NameError('requested derivative does not match any implemented one')
         return x
 
-    def generateParametrizedPath(self,t,x,derivative='zero'):
-        x_t = self._ninePolynom(t,self.specifics.T, derivative=derivative,coeffaxis=0)
+    def generateParametrizedPath(self, t, x, derivative='zero'):
+        x_t = self._ninePolynom(t, self.specifics.T, derivative=derivative, coeffaxis=0)
         if derivative == 'zero':
-            y_x = self._ninePolynom(x_t,self.specifics.D, derivative=derivative,coeffaxis=1)
+            y_x = self._ninePolynom(x_t, self.specifics.D, derivative=derivative, coeffaxis=1)
         else:
-            y_x = self._ninePolynom(x, self.specifics.D, derivative=derivative,coeffaxis=1)
+            y_x = self._ninePolynom(x, self.specifics.D, derivative=derivative, coeffaxis=1)
 
-        return x_t,y_x
+        return x_t, y_x
