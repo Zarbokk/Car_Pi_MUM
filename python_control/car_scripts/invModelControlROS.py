@@ -286,6 +286,8 @@ class invModelControl:
                 error = self.radToDeg(psisoll - psi)
                 ddelta = self.trajectoryControler(error, t=t0)
                 delta = delta + self.degToRad(ddelta)
+                delta = self.saturate(delta, self.degToRad(29))
+
 
         else:
             v, delta, psisoll = self.carInput(t0)
@@ -293,7 +295,7 @@ class invModelControl:
                 error = self.radToDeg(psisoll - psi)
                 ddelta = self.trajectoryControler(error,t0)
                 delta = delta + self.degToRad(ddelta)
-        #delta = self.saturate(delta, self.degToRad(29))
+                delta = self.saturate(delta, self.degToRad(29))
         if v == 0:
             v = vTol
         v = np.sign(v) * np.max([np.abs(v), vTol])
