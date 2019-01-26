@@ -79,7 +79,8 @@ model.compile(loss=keras.losses.mean_squared_error,
               optimizer=keras.optimizers.Adam(lr=learning_rate))
 
 model.fit_generator(generate_arrays_from_file(
-    "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
+    #"/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
+    "F:/OneDrive/just_data_thrown_around/backward/grey_image_data_backward0.csv",
     False),
                     steps_per_epoch=steps_per_epoche, epochs=number_epochs)
 # model.fit_generator(generate_arrays_from_file("F:/OneDrive/Uni/StudienArbeit/Car_Dataset/augmented_data_FULL.csv",),
