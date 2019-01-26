@@ -1,5 +1,5 @@
 import cv2
-from car_scripts.red_dots_tracking_class import tracking_red_dots
+from car_scripts.new_tracking.old_tracking.red_dots_tracking_class import tracking_red_dots
 
 
 

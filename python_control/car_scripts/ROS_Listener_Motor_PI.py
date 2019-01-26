@@ -23,8 +23,14 @@ def callback(data):
 
 def send_data(pwm):
     """Send angle and speed data to motor."""
+    global angle
+    if angle > 29:
+        angle = 29
+    if angle < -29:
+        angle = -29
+
     if angle < 30 and angle > -30:
-        pwm.set_pwm(6, 0, 2407 + 869 * int(angle) / 30)
+        pwm.set_pwm(6, 0, 2407 - 869 * int(angle) / 30)
         # 2457 da auf 400 Hz 30 fuer 30 Grad(in de$
     if motor_input_value >= -4095 and motor_input_value <= 0:
         # moving backwards
@@ -50,13 +56,17 @@ def listener():
     pwm.set_pwm(8, 0, 4000)
     pwm.set_pwm(9, 0, 4000)
     rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("car_motor_input", PointStamped, callback)
+    rospy.Subscriber("car_input_03", PointStamped, callback)
     rate = rospy.Rate(30)
     # spin() simply keeps python from exiting until this node is stopped
     while not rospy.is_shutdown():
         rate.sleep()
         send_data(pwm)
         # rospy.spin()
+    pwm.set_pwm(6, 0, 2407)
+    pwm.set_pwm(11, 0, 0)
+    pwm.set_pwm(10, 0, 0)
+
 
 if __name__ == '__main__':
     listener()

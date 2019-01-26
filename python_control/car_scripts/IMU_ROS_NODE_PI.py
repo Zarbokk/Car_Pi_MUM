@@ -30,9 +30,9 @@ def get_x_rotation(x, y, z):
     radians = math.atan2(y, dist(x, z))
     return math.degrees(radians)
 def talker():
-    pub = rospy.Publisher('IMU_acceleration', Imu, queue_size=10)
+    pub = rospy.Publisher('IMU_03', Imu, queue_size=1)
     rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(50) # 10hz
 
     power_mgmt_1 = 0x6b
     power_mgmt_2 = 0x6c
@@ -67,7 +67,8 @@ def talker():
         imu_data.orientation.y = quaternion[1]
         imu_data.orientation.z = quaternion[2]
         imu_data.orientation.w = quaternion[3]
-        rospy.loginfo(imu_data)
+        imu_data.header.stamp = rospy.Time.now()
+        #rospy.loginfo(imu_data)
         pub.publish(imu_data)
         rate.sleep()
 
