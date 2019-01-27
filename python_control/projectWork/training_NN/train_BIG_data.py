@@ -4,8 +4,8 @@ import numpy as np
 import time
 import cv2
 
-steps_per_epoche=4158
-number_epochs=500
+steps_per_epoche=20#4158
+number_epochs=20
 
 kernel_size_first = 3
 conv_first = 16
