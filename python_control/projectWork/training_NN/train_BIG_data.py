@@ -5,7 +5,7 @@ import time
 import cv2
 
 steps_per_epoche=4158
-number_epochs=500
+number_epochs=20
 
 kernel_size_first = 3
 conv_first = 16
@@ -47,7 +47,7 @@ def generate_arrays_from_file(path, printing):
             i = i + 1
 
             if i == batch_size:
-                print(i,x_train.shape)
+                #print(i,x_train.shape)
                 x_train = x_train.astype('float32')
                 y_train = y_train.astype('float32')
                 yield (x_train, y_train)
@@ -82,7 +82,7 @@ model.compile(loss=keras.losses.mean_squared_error,
 
 model.fit_generator(generate_arrays_from_file(
     #"/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/train_data/augmented_data/complete_for_training/augmented_data_FULL.csv",
-    "F:/OneDrive/just_data_thrown_around/backward/grey_image_data_backward0.csv",
+    "F:/OneDrive/just_data_thrown_around/meine_training_data/augmented_data_FULL.csv",
 
     False),
                     steps_per_epoch=steps_per_epoche, epochs=number_epochs)
@@ -103,5 +103,5 @@ model.fit_generator(generate_arrays_from_file(
 #    True), 10, max_queue_size=1))
 # print(y_train)
 
-model.save("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/best_model_theory.h5")
+model.save("F:/OneDrive/just_data_thrown_around/meine_training_data/best_model_theory.h5")
 # model.save_weights("/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/models/test_model_64x36.h5")
