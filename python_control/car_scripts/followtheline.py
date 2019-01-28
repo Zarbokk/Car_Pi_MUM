@@ -92,7 +92,10 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=300,
 
     Returns
     -------
-    fit : np.array
+    fit : np.array164	1939.111,
+-9.097	->	-9.097	1945.289,
+-9.131	->	-9.131	1942.156,
+-8.976	->	-8.976	1956
         Coefficients of polynomial, use np.polyval(p, x)
     out_img : np.array
         Image with plotted rectangles

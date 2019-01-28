@@ -10,7 +10,6 @@ from sensor_msgs.msg import Range
 from sensor_msgs.msg import Imu
 from tracking_performance_class import tracking_red_dots
 import invModelControlROS as imcr
-
 # from invModelControlforROS import invModelControl
 rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
@@ -46,6 +45,7 @@ t_range = 1 / 20.0
 def transform_to_opencv(image):
     bridge = CvBridge()
     try:
+        #image = bridge.imgmsg_to_cv2(image, "bgr8")
         image = bridge.imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
