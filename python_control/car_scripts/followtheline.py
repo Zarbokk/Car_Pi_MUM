@@ -213,13 +213,14 @@ def transform_to_opencv(image):
         print(e)
     return image
 
-angles = np.array([0, 0, 0, 0])
+angles = np.zeros(5)
+# weights = (6 - np.arange(1, 6)) / 5
 
 
 def callback(image_sub):
     """Callback for Processing the stuff."""
     # use last angles
-    global angles
+    global angles, weights
 
     frame = transform_to_opencv(image_sub)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -233,25 +234,33 @@ def callback(image_sub):
             warped, nwindows=25, x_base=warped.shape[1] // 2, minpix=100,
             get_image=False, degree=2, debug=False)
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
-        steering = 2 * np.round(np.mean(
+        steering = np.round(np.mean(
             np.polyval(
                 np.polyder(fit), ploty[len(ploty) // 3 * 2:]
             )),
             3) / 1.97 * 29
+        additive_factor = (
+            10 * (
+                warped.shape[1] // 2 -
+                np.polyval(fit, warped.shape[0] // 3 * 2)
+            ) / warped.shape[1] * 3
+        )  # if offset -> correct it
+        steering += additive_factor
         steering = steering if abs(steering) <= 29 else np.sign(steering) * 29
-        angles = np.roll(angles, 1)
-        angles[0] = steering
-        speed = 2000 * np.exp(-abs(steering) / 21)
-        angle = np.ma.average(angles, weights=[9, 4, 3, 1])
+        # angles = np.roll(angles, 1)
+        # angles[0] = steering + additive_factor
+        angle = steering
+        speed = 3000 * np.exp(-abs(steering) / 21)
+        # angle = np.ma.average(angles, weights=weights)
         print("{:.3f}\t->\t{:.3f}\t{:.3f},\t{}".format(
-            steering, angle, speed,
-            " + ".join([
-                "{:.3f}*x^{}".format(c, len(fit) - i - 1)
-                for i, c in enumerate(fit)])
+            steering, angle, speed, ''
+            # " + ".join([
+            #     "{:.3f}*x^{}".format(c, len(fit) - i - 1)
+            #     for i, c in enumerate(fit)])
         ))
     except Exception as e:
         print('error:\t{}'.format(e))
-    speed = speed if speed > 500 else 500
+    speed = speed if speed > 800 else 800
     speed = speed if speed < 1000 else 1000
 
     message = PointStamped()
