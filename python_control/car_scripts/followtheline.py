@@ -1,9 +1,10 @@
 # !/usr/bin/env python
+"""Line Tracking and Following Code."""
 
 if __name__ == '__main__':
     from cv_bridge import CvBridge, CvBridgeError
     from geometry_msgs.msg import PointStamped
-    from sensor_msgs.msg import Image, CompressedImage
+    from sensor_msgs.msg import Image
     import rospy
     rospy.init_node('publisher', anonymous=True)
     pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
@@ -58,16 +59,18 @@ def plot_warping(ax, src, dst, this_img, warped):
         axx.set_yticks([])
 
 def plot_result(ax, warped, out_img, fit):
+    """Take axis and plot result on it."""
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     fitx = np.polyval(fit, ploty)
     ax.imshow(np.max(out_img, axis=2) + warped)
     ax.plot(fitx, ploty, color='yellow', linestyle="dashed", linewidth=5)
-    ax.set_title(np.round(np.mean(np.polyval(np.polyder(fit), ploty[len(ploty)//4*3:])),3)/1.97*29*(-1))
+    ax.set_title(np.round(np.mean(np.polyval(
+        np.polyder(fit), ploty[len(ploty) // 4 * 3:])), 3) / 1.97 * 29)
 
 
-
-def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=30,
-                   degree=3, get_image=False, debug=False, previous_fit=None):
+def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=300,
+                   degree=3, get_image=False, debug=False, previous_fit=None,
+                   economically=False, threshold=150):
     """Calculate Lane Line by histogram approach and interpolating polynomial.
 
     Parameters
@@ -94,7 +97,8 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=30,
     out_img : np.array
         Image with plotted rectangles
     """
-    minpix = minpix * nwindows
+    if threshold:
+        img[img < threshold] = 0  # img[img < threshold].mean()
 
     if x_base:
         pass
@@ -107,6 +111,9 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=30,
         x_base = np.argmax(histogram[
             midpoint * (cut_nenner - 1) / cut_nenner:
             midpoint * (cut_nenner + 1) / cut_nenner])
+
+    rectangle_centers = [[img.shape[0], x_base]]
+
     # Create an output image to draw on and  visualize the result
     if get_image:
         out_img = np.dstack((img, img, img)) * 255
@@ -157,26 +164,26 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=30,
         if get_image:
             cv2.rectangle(
                 out_img, (win_x_low, win_y_low), (win_x_high, win_y_high),
-                (0, 0, 0), thickness=2)
+                (255, 255, 255), thickness=2)
         # Identify the nonzero pixels in x and y within the window
         good_inds = (
             (nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
             (nonzerox >= win_x_low) & (nonzerox < win_x_high)).nonzero()[0]
-        # If you found > minpix pixels,
+        # If you found amount of minpix percent pixels,
         # recenter next window on their mean position
+        if debug:
+            print("step {}: {} / {}".format(
+                window, len(good_inds),
+                (win_x_high - win_x_low) * (win_y_high - win_y_low)
+            ))
         if len(good_inds) > minpix:
-            if debug:
-                print("step {}: {} / {}".format(
-                    window, len(good_inds),
-                    (win_x_high - win_x_low) * (win_y_high - win_y_low)
-                ))
             # Append these indices to the lists
             lane_inds.append(good_inds)
             if np.sum(img[win_y_low:win_y_high, win_x_low:win_x_high]):
                 x_current = win_x_low + np.argmax(np.sum(
                     img[win_y_low:win_y_high, win_x_low:win_x_high], axis=0))
-            else:
-                pass
+
+            rectangle_centers.append([win_y_high, x_current])
 
     # Concatenate the arrays of indices
     lane_inds = np.concatenate(lane_inds)
@@ -186,7 +193,10 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=30,
     y = nonzeroy[lane_inds]
 
     # Fit a second order polynomial to each
-    fit = np.polyfit(y, x, degree)
+    if economically:
+        fit = np.polyfit(*zip(*rectangle_centers), deg=degree)
+    else:
+        fit = np.polyfit(y, x, degree)
 
     if get_image:
         return fit, out_img
@@ -198,48 +208,51 @@ def transform_to_opencv(image):
     """Transform Image Message to Opencv Image."""
     bridge = CvBridge()
     try:
-        image = bridge.compressed_imgmsg_to_cv2(image, "passthrough")
+        image = bridge.imgmsg_to_cv2(image, "passthrough")
     except CvBridgeError as e:
         print(e)
     return image
 
-angle1 = 0
-angle2 = 0
-angle3 = 0
+angles = np.array([0, 0, 0, 0])
 
 
 def callback(image_sub):
     """Callback for Processing the stuff."""
     # use last angles
-    global angle1, angle2, angle3
-    angle1 = angle2
-    angle2 = angle3
+    global angles
 
     frame = transform_to_opencv(image_sub)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # frame = cv2.resize(frame, (0, 0), fx=0.75, fy=0.75)
     # np.save('images/{}'.format(rospy.Time.now()), frame)
     warped, src, dst = get_warped(frame)
     steering = 0
+    speed = 0
     try:
         fit = calc_line_fits(
-            warped, nwindows=25, x_base=warped.shape[1]//2-20, minpix=10,
-            get_image=False, degree=2)
+            warped, nwindows=25, x_base=warped.shape[1] // 2, minpix=100,
+            get_image=False, degree=2, debug=False)
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
-        # left_fitx = np.polyval(left_fit, ploty)
-        # np.mean(1 / (100 + ploty) * 100 * np.polyval(
-        #     np.polyder(left_fit), ploty))
-        steering = np.round(np.mean(np.polyval(np.polyder(fit), ploty[len(ploty)//4*3:])),3)/1.97*29*(-1)
+        steering = 2 * np.round(np.mean(
+            np.polyval(
+                np.polyder(fit), ploty[len(ploty) // 3 * 2:]
+            )),
+            3) / 1.97 * 29
         steering = steering if abs(steering) <= 29 else np.sign(steering) * 29
+        angles = np.roll(angles, 1)
+        angles[0] = steering
+        speed = 2000 * np.exp(-abs(steering) / 21)
+        angle = np.ma.average(angles, weights=[9, 4, 3, 1])
+        print("{:.3f}\t->\t{:.3f}\t{:.3f},\t{}".format(
+            steering, angle, speed,
+            " + ".join([
+                "{:.3f}*x^{}".format(c, len(fit) - i - 1)
+                for i, c in enumerate(fit)])
+        ))
     except Exception as e:
         print('error:\t{}'.format(e))
-
-    angle3 = np.sign(angle3) * min(29, 2 * abs(angle3) / 2.9 * 29)
-    speed = 0
-    # speed = 2000 * np.exp(-abs(steering) / 21)
-    # speed = speed if speed > 500 else 500
-
-    print("{:.3f}\t({:.3f}\t{:.3f}\t{:.3f}),\t{}".format(
-        steering, angle1, angle2, angle3, speed))
+    speed = speed if speed > 500 else 500
+    speed = speed if speed < 1000 else 1000
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
@@ -251,8 +264,9 @@ def callback(image_sub):
 
 
 def listener():
+    """Wrapper for subscribing image data and spinning arooound."""
     global angle1, angle2, angle3
-    rospy.Subscriber('/raspicam_node/image/compressed', CompressedImage, callback)
+    rospy.Subscriber('/raspicam_node/image', Image, callback)
     rospy.spin()
 
 
