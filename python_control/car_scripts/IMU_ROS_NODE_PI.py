@@ -30,7 +30,7 @@ def get_x_rotation(x, y, z):
     radians = math.atan2(y, dist(x, z))
     return math.degrees(radians)
 def talker():
-    pub = rospy.Publisher('IMU_03', Imu, queue_size=1)
+    pub = rospy.Publisher('IMU_10', Imu, queue_size=1)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(50) # 10hz
 

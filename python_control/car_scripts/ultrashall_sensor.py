@@ -57,9 +57,9 @@ def talker():
     old_distance=0
     while not rospy.is_shutdown():
         d = distance()
-        if d>350 or d<5:
+        if d>100 or d<5:
             d=old_distance
-        d=d*0.9+old_distance*0.1
+        d=d*0.5+old_distance*0.5
         message = Range()
         message.header.stamp = rospy.Time.now()
         message.range = d  # very noisy

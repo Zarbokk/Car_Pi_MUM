@@ -59,6 +59,7 @@ class tracking_red_dots:
         # cv2.imshow('crop_image', crop_img)
         # cv2.waitKey(1)
         frame = crop_img
+        # print(self.resize_image_perf)
         frame = cv2.resize(frame, (0, 0), fx=self.resize_image_perf, fy=self.resize_image_perf)
         # frame = hsv = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)

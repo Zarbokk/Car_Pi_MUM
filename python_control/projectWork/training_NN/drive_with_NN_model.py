@@ -16,7 +16,7 @@ graph = tf.get_default_graph()
 model = keras.models.load_model(
     "/home/tim/Documents/Car_Pi_MUM/python_control/projectWork/training_NN/modelle_week_random/week_models_20_0_0_1_0_1.h5")
 rospy.init_node('publisher', anonymous=True)
-pub = rospy.Publisher('car_input_10', PointStamped, queue_size=1)
+pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
 rate = rospy.Rate(25)  # Frequenz der Anwendung
 
 
@@ -77,7 +77,7 @@ def callback(image):
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
-    message.point.x = 2000  # aktuell in tick rate(+- 3900)
+    message.point.x = 800  # aktuell in tick rate(+- 3900)
     message.point.y = 2  # not used
     message.point.z = steering_in  # in grad(max +-20)
     # rospy.loginfo(message)
