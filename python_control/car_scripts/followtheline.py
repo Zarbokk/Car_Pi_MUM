@@ -232,7 +232,7 @@ def callback(image_sub):
     try:
         fit = calc_line_fits(
             warped, nwindows=25, x_base=warped.shape[1] // 2, minpix=100,
-            get_image=False, degree=2, debug=False)
+            get_image=False, degree=2, debug=False, threshold=170)
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
         steering = np.round(np.mean(
             np.polyval(
@@ -250,7 +250,7 @@ def callback(image_sub):
         # angles = np.roll(angles, 1)
         # angles[0] = steering + additive_factor
         angle = steering
-        speed = 3000 * np.exp(-abs(steering) / 21)
+        speed = 3500 * np.exp(-abs(steering) / 40)
         # angle = np.ma.average(angles, weights=weights)
         print("{:.3f}\t->\t{:.3f}\t{:.3f},\t{}".format(
             steering, angle, speed, ''
@@ -260,8 +260,8 @@ def callback(image_sub):
         ))
     except Exception as e:
         print('error:\t{}'.format(e))
-    speed = speed if speed > 800 else 800
-    speed = speed if speed < 1000 else 1000
+    speed = speed if speed > 600 else 600
+    speed = speed if speed < 4000 else 4000
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
