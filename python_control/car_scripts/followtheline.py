@@ -8,9 +8,9 @@ import cv2
 import matplotlib as mpl
 import numpy as np
 import rospy
+rospy.init_node('publisher', anonymous=True)
 pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
 rate = rospy.Rate(20)  # Frequenz der Anwendung
-rospy.init_node('publisher', anonymous=True)
 
 
 def get_warped(this_img, height_pct=.4, return_m_inv=False):
@@ -219,7 +219,7 @@ def get_params(img, speed_scale=3500, **kwargs):
     steering = 0
     speed = 0
     try:
-        fit = calc_line_fits(warped, x_base=warped.shape[1] // 2 **kwargs)
+        fit = calc_line_fits(warped, x_base=warped.shape[1] // 2, **kwargs)
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
         steering = np.round(np.mean(
             np.polyval(
@@ -238,6 +238,7 @@ def get_params(img, speed_scale=3500, **kwargs):
         print("{:.3f}\t{:.3f}".format(steering, speed))
     except Exception as e:
         print('error:\t{}'.format(e))
+        raise e
     speed = speed if speed > 600 else 600
     speed = speed if speed < 4000 else 4000
     return speed, steering
@@ -248,15 +249,16 @@ def callback(image_sub):
     # use last angles
     params = {
         'nwindows': 25,
-        'minpix': 100,
+        'minpix': 150,
         'get_image': False,
         'degree': 2,
-        'debug': False,
-        'threshold': 170
+        'debug': True,
+        'threshold': 160,
+        'speed_scale': 2500
     }
     frame = transform_to_opencv(image_sub)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    speed, steering = get_params(img, **params)
+    speed, steering = get_params(frame, **params)
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
@@ -269,7 +271,6 @@ def callback(image_sub):
 
 def listener():
     """Wrapper for subscribing image data and spinning arooound."""
-    global angle1, angle2, angle3
     rospy.Subscriber('/raspicam_node/image', Image, callback)
     rospy.spin()
 
