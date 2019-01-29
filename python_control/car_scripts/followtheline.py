@@ -1,17 +1,16 @@
 # !/usr/bin/env python
 """Line Tracking and Following Code."""
 
-if __name__ == '__main__':
-    from cv_bridge import CvBridge, CvBridgeError
-    from geometry_msgs.msg import PointStamped
-    from sensor_msgs.msg import Image
-    import rospy
-    rospy.init_node('publisher', anonymous=True)
-    pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
-    rate = rospy.Rate(20)  # Frequenz der Anwendung
-import numpy as np
+from cv_bridge import CvBridge, CvBridgeError
+from geometry_msgs.msg import PointStamped
+from sensor_msgs.msg import Image
 import cv2
 import matplotlib as mpl
+import numpy as np
+import rospy
+pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
+rate = rospy.Rate(20)  # Frequenz der Anwendung
+rospy.init_node('publisher', anonymous=True)
 
 
 def get_warped(this_img, height_pct=.4, return_m_inv=False):
@@ -58,6 +57,7 @@ def plot_warping(ax, src, dst, this_img, warped):
         axx.set_xticks([])
         axx.set_yticks([])
 
+
 def plot_result(ax, warped, out_img, fit):
     """Take axis and plot result on it."""
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
@@ -92,10 +92,7 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=300,
 
     Returns
     -------
-    fit : np.array164	1939.111,
--9.097	->	-9.097	1945.289,
--9.131	->	-9.131	1942.156,
--8.976	->	-8.976	1956
+    fit : np.array
         Coefficients of polynomial, use np.polyval(p, x)
     out_img : np.array
         Image with plotted rectangles
@@ -216,26 +213,13 @@ def transform_to_opencv(image):
         print(e)
     return image
 
-angles = np.zeros(5)
-# weights = (6 - np.arange(1, 6)) / 5
 
-
-def callback(image_sub):
-    """Callback for Processing the stuff."""
-    # use last angles
-    global angles, weights
-
-    frame = transform_to_opencv(image_sub)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # frame = cv2.resize(frame, (0, 0), fx=0.75, fy=0.75)
-    # np.save('images/{}'.format(rospy.Time.now()), frame)
-    warped, src, dst = get_warped(frame)
+def get_params(img, speed_scale=3500, **kwargs):
+    warped, src, dst = get_warped(img)
     steering = 0
     speed = 0
     try:
-        fit = calc_line_fits(
-            warped, nwindows=25, x_base=warped.shape[1] // 2, minpix=100,
-            get_image=False, degree=2, debug=False, threshold=170)
+        fit = calc_line_fits(warped, x_base=warped.shape[1] // 2 **kwargs)
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
         steering = np.round(np.mean(
             np.polyval(
@@ -250,21 +234,29 @@ def callback(image_sub):
         )  # if offset -> correct it
         steering += additive_factor
         steering = steering if abs(steering) <= 29 else np.sign(steering) * 29
-        # angles = np.roll(angles, 1)
-        # angles[0] = steering + additive_factor
-        angle = steering
-        speed = 3500 * np.exp(-abs(steering) / 40)
-        # angle = np.ma.average(angles, weights=weights)
-        print("{:.3f}\t->\t{:.3f}\t{:.3f},\t{}".format(
-            steering, angle, speed, ''
-            # " + ".join([
-            #     "{:.3f}*x^{}".format(c, len(fit) - i - 1)
-            #     for i, c in enumerate(fit)])
-        ))
+        speed = speed_scale * np.exp(-abs(steering) / 40)
+        print("{:.3f}\t{:.3f}".format(steering, speed))
     except Exception as e:
         print('error:\t{}'.format(e))
     speed = speed if speed > 600 else 600
     speed = speed if speed < 4000 else 4000
+    return speed, steering
+
+
+def callback(image_sub):
+    """Callback for Processing the stuff."""
+    # use last angles
+    params = {
+        'nwindows': 25,
+        'minpix': 100,
+        'get_image': False,
+        'degree': 2,
+        'debug': False,
+        'threshold': 170
+    }
+    frame = transform_to_opencv(image_sub)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    speed, steering = get_params(img, **params)
 
     message = PointStamped()
     message.header.stamp = rospy.Time.now()
