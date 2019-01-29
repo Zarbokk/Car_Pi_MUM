@@ -190,7 +190,7 @@ class invModelControl:
     ################
 
     def simulateModel(self, y0, trange, model='complex', **kwargs):
-
+        print("y0",y0)
         if model == 'complex':
             if y0.size < 5:
                 y0 = np.concatenate((y0, np.zeros((5 - y0.size))), axis=None)

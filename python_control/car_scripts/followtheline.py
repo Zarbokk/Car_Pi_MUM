@@ -8,9 +8,7 @@ import cv2
 import matplotlib as mpl
 import numpy as np
 import rospy
-rospy.init_node('publisher', anonymous=True)
-pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
-rate = rospy.Rate(20)  # Frequenz der Anwendung
+
 
 
 def get_warped(this_img, height_pct=.4, return_m_inv=False):
@@ -276,4 +274,7 @@ def listener():
 
 
 if __name__ == '__main__':
+    rospy.init_node('publisher', anonymous=True)
+    pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
+    rate = rospy.Rate(20)  # Frequenz der Anwendung
     listener()

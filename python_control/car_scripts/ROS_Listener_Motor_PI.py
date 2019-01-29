@@ -56,7 +56,7 @@ def listener():
     pwm.set_pwm(8, 0, 4000)
     pwm.set_pwm(9, 0, 4000)
     rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("car_input_03", PointStamped, callback)
+    rospy.Subscriber("car_input_10", PointStamped, callback)
     rate = rospy.Rate(30)
     # spin() simply keeps python from exiting until this node is stopped
     while not rospy.is_shutdown():
