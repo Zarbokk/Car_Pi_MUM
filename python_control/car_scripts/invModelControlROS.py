@@ -322,7 +322,7 @@ class invModelControl:
         return [dxpos, dypos, dbetha, dpsi, dphi]
 
     def carModelDiscrete(self, xa, t0, ub=[1, 0], uf=[1, 0]):
-        case = 0
+        case = 1
         n = xa.size // 2
         if case == 0:
             dx1 = self.carModelOneLane(xa[:n], t0, constInput=True, uc=ub)

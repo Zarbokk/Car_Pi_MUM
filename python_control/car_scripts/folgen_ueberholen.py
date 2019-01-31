@@ -11,7 +11,7 @@ from tracking_performance_class import tracking_red_dots
 import invModelControlROS as imcr
 # from invModelControlforROS import invModelControl
 rospy.init_node('publisher', anonymous=True)
-pub = rospy.Publisher('car_input_10', PointStamped, queue_size=1)
+pub = rospy.Publisher('car_input_03', PointStamped, queue_size=1)
 rate = rospy.Rate(20)  # Frequenz der Anwendung
 tracker = None
 inverse_model = None
@@ -88,10 +88,10 @@ d_anteil=0
 alter_error=0
 def overtake(imu_03_sub, inverse_model):
     global angle_03, timer_always, speed, states, u_b, u_f, linie_folgen, ueberholen,old_time_for_simulation,d_anteil,alter_error
-    scaling_imu_angle = 17063036.0 / 4.0 / 360.0 * 5 / 45.0*180.0/140.0
+    scaling_imu_angle = 17063036.0 / 4.0 / 360.0 * 5 / 45.0*180.0/140.0 * 305 / 360
     angle_03 = angle_03 + imu_03_sub.angular_velocity.z
     # v = speed
-    timer_always=float(timer_always)
+    timer_always = float(timer_always)
     initialdelaytime = 0
     middledelaytime = 0
     if timer_always < initialdelaytime:
@@ -133,11 +133,12 @@ def overtake(imu_03_sub, inverse_model):
         psi = -psi * 180 / 3.14159
         delta = -delta*1.1
         error = psi - angle_03 / scaling_imu_angle
+        print(psi - error)
 
-        d_anteil=tiefpass(error-alter_error,d_anteil,0.99)
+        d_anteil = tiefpass(error - alter_error, d_anteil, 0.99)
         print("d_anteil:",d_anteil)
         #inverse_correction = inverse_model.trajectoryControler(error, 1.5 * 20) / 180 * 3.14159
-        inverse_correction = 0.5*error * 1 / 180.0 * 3.14159+0.7*d_anteil/180*3.14159
+        inverse_correction = 0.5 * error * 1 / 180.0 * 3.14159 + 0.3 * d_anteil / 180 * 3.14159
         alter_error = error
         funneltime = timer_always
         if inverse_model.T0:
@@ -182,7 +183,7 @@ def follow_line(frame, vel=0.6):
         alpha_car = 0
         timer_always = 0
         # return 0, 0
-    return vel * 4000 / 2.2*0, 0
+    return vel * 4000 / 2.2 * 0, 0
 
 
 def follow_car(frame, tracker):
@@ -217,7 +218,7 @@ def follow_car(frame, tracker):
 
     accel_in_f_ma = tiefpass(accell_in, accel_in_f_ma, 0.95)
 
-    if timer_always > 4:
+    if timer_always > 3:
         ueberholen = True
         fahrzeug_folgen = False
         angle_03 = 0
@@ -259,13 +260,13 @@ def callback(image_sub, imu_03_sub):#ultraschall_sub):
     global ueberholen, linie_folgen, fahrzeug_folgen, timer_always, inverse_model, tracker, speed, old_time
     imu_angle = 0
     if ueberholen:
-        print("Ueberholen")
+        #print("Ueberholen")
         accell_in, steering, imu_angle = overtake(imu_03_sub, inverse_model)
     elif fahrzeug_folgen:
         print("verfolgen")
         accell_in, steering = follow_car(frame, tracker)
     elif linie_folgen:
-        print("following_line")
+        #print("following_line")
         accell_in, steering = follow_line(frame, vel=speed)
     # print("time since last call",(rospy.get_time()-old_time))
     # timer_always = timer_always + 1 / 20.0
@@ -295,7 +296,7 @@ def listener():
     inverse_model = imcr.invModelControl(speed, 0.4, "quadS")
     image_sub = message_filters.Subscriber('/raspicam_node/image', Image)
     #ultraschall_sub = message_filters.Subscriber('/distance_sensor_03', Range)
-    imu_03_sub = message_filters.Subscriber('/IMU_10', Imu)
+    imu_03_sub = message_filters.Subscriber('/IMU_03', Imu)
     old_time = rospy.get_time()
     # imu_10_sub = message_filters.Subscriber('/IMU_10', Imu)
     # car_f_sub = message_filters.Subscriber('/car_input_10', PointStamped)

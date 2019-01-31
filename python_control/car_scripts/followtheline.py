@@ -169,7 +169,7 @@ def calc_line_fits(img, x_base=None, nwindows=15, margin=20, minpix=300,
             (nonzerox >= win_x_low) & (nonzerox < win_x_high)).nonzero()[0]
         # If you found amount of minpix percent pixels,
         # recenter next window on their mean position
-        if debug:
+        if debug and (window < 3):
             print("step {}: {} / {}".format(
                 window, len(good_inds),
                 (win_x_high - win_x_low) * (win_y_high - win_y_low)
@@ -221,7 +221,7 @@ def get_params(img, speed_scale=3500, **kwargs):
         ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
         steering = np.round(np.mean(
             np.polyval(
-                np.polyder(fit), ploty[len(ploty) // 3 * 2:]
+                np.polyder(fit), ploty[len(ploty) // 2 * 1:]
             )),
             3) / 1.97 * 29
         additive_factor = (
@@ -232,12 +232,12 @@ def get_params(img, speed_scale=3500, **kwargs):
         )  # if offset -> correct it
         steering += additive_factor
         steering = steering if abs(steering) <= 29 else np.sign(steering) * 29
-        speed = speed_scale * np.exp(-abs(steering) / 40)
+        speed = 100 + speed_scale * np.exp(-abs(steering) / 29)
         print("{:.3f}\t{:.3f}".format(steering, speed))
     except Exception as e:
         print('error:\t{}'.format(e))
         raise e
-    speed = speed if speed > 600 else 600
+    speed = speed if speed > 1100 else 1100
     speed = speed if speed < 4000 else 4000
     return speed, steering
 
@@ -247,12 +247,12 @@ def callback(image_sub):
     # use last angles
     params = {
         'nwindows': 25,
-        'minpix': 150,
+        'minpix': 100,
         'get_image': False,
         'degree': 2,
         'debug': True,
-        'threshold': 160,
-        'speed_scale': 2500
+        'threshold': 180,
+        'speed_scale': 2700
     }
     frame = transform_to_opencv(image_sub)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
